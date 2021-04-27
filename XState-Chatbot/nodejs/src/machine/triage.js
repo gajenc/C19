@@ -143,9 +143,57 @@ const triageFlow = {
           actions: assign((context, event) => {
             context.slots.triage.person = event.data;
           }),
-          target: '#symptoms'
+          target: '#specialSymptoms'
         }
         // TODO: handle duplicate person??
+      }
+    },
+    specialSymptoms: {
+      id: 'specialSymptoms',
+      initial: 'prompt',
+      states: {
+        prompt: {
+          onEntry: assign((context, event) => {
+            let message = dialog.get_message(messages.specialSymptoms.prompt, context.user.locale);
+            message = message.replace('{{name}}', context.slots.triage.person.first_name);
+            message += dialog.get_message(grammers.binaryChoice.prompt, context.user.locale);
+            context.grammer = grammers.binaryChoice.grammer;
+            dialog.sendMessage(context, message);
+          }),
+          on: {
+            USER_MESSAGE: 'process'
+          }
+        },
+        process: {
+          onEntry: assign((context, event) => {
+            context.intention = dialog.get_intention(context.grammer, event);
+          }),
+          always: [
+            {
+              cond: (context) => context.intention == dialog.INTENTION_UNKOWN,
+              target: 'error'
+            },
+            {
+              cond: (context) => context.intention === true,
+              actions: assign((context, event) => {
+                  let message = dialog.get_message(messages.endFlow.specialSymptomsEnd, context.user.locale);
+                  message = message.replace('{{name}}', context.slots.triage.person.first_name);
+                  dialog.sendMessage(context, message);
+                }),
+              target: '#upsertTriageDetails'
+            },
+            {
+              cond: (context) => context.intention === false,
+              target: '#symptoms'
+            }
+          ]
+        },
+        error: {
+          onEntry: assign((context, event) => {
+            dialog.sendMessage(context, dialog.get_message(dialog.global_messages.error.optionsRetry, context.user.locale), false);
+          }),
+          always: 'prompt'
+        }
       }
     },
     symptoms: {
@@ -330,7 +378,7 @@ const triageFlow = {
         prompt: {
           onEntry: assign((context, event) => {
             let message = dialog.get_message(messages.triageSpo2.prompt.preamble, context.user.locale);
-            message.replace('{{name}}', context.slots.triage.person.first_name);
+            message = message.replace('{{name}}', context.slots.triage.person.first_name);
             let { prompt, grammer } = dialog.constructListPromptAndGrammer(messages.triageSpo2.prompt.options.list, messages.triageSpo2.prompt.options.messageBundle, context.user.locale);
             message += prompt;
             context.grammer = grammer;
@@ -479,7 +527,7 @@ const triageFlow = {
               actions: assign((context, event) => {
                 context.slots.triage.subscribe = context.intention;
                 let message;
-                if(context.intention == 'true') {
+                if(context.intention == true) {
                   message = dialog.get_message(messages.subscribe.doSubscribe, context.user.locale);
                   message = message.replace('{{name}}', context.slots.triage.person.first_name);
                 } else {
