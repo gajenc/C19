@@ -2,6 +2,7 @@ package org.egov.enc.keymanagement.masterkey.providers;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.kms.model.DecryptRequest;
@@ -25,11 +26,11 @@ import java.util.Base64;
 public class AwsKmsMasterKey implements MasterKeyProvider {
 
 
-    @Value("${aws.kms.access.key:}")
+    @Value("${aws.access.key.id:}")
     private String awsAccessKey;
-    @Value("${aws.kms.secret.key:}")
+    @Value("${aws.secret.access.key:}")
     private String awsSecretKey;
-    @Value("${aws.kms.region:}")
+    @Value("${aws.region:}")
     private String awsRegion;
 
     @Value("${aws.kms.master.password.key.id:}")
@@ -39,8 +40,8 @@ public class AwsKmsMasterKey implements MasterKeyProvider {
 
     @PostConstruct
     public void initializeConnection() {
-        AWSStaticCredentialsProvider awsCredentials = new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsAccessKey, awsSecretKey));
-        this.awskms = AWSKMSClientBuilder.standard().withCredentials(awsCredentials).withRegion(awsRegion).build();
+        ProfileCredentialsProvider awsCredentials = new ProfileCredentialsProvider();
+        this.awskms = AWSKMSClientBuilder.standard().withCredentials(awsCredentials).build();
     }
 
     @Override
