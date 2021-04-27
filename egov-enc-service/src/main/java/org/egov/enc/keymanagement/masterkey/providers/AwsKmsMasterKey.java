@@ -2,6 +2,7 @@ package org.egov.enc.keymanagement.masterkey.providers;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
@@ -40,7 +41,7 @@ public class AwsKmsMasterKey implements MasterKeyProvider {
 
     @PostConstruct
     public void initializeConnection() {
-        ProfileCredentialsProvider awsCredentials = new ProfileCredentialsProvider();
+        DefaultAWSCredentialsProviderChain awsCredentials = new DefaultAWSCredentialsProviderChain();
         this.awskms = AWSKMSClientBuilder.standard().withCredentials(awsCredentials).build();
     }
 
