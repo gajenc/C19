@@ -1,0 +1,84 @@
+# Common Labels
+labels:
+  app: "chatbot"
+
+# Ingress Configs
+ingress:
+  enabled: true
+  path: "xstate-chatbot"
+
+# Container Configs
+image:
+  repository: "nithindv/chatbot"
+  tag: "v1.0.7"
+replicas: "1"
+whatsappProvider: "Kaleyra"
+repoProvider: "PostgresSQL"
+hasuraUrl: "http://hge-pro:8080/v1/graphql"
+encryptionServiceHost: "http://egov-enc-service:8080"     
+resources: |
+  requests:
+    cpu: 200m
+    memory: 1Gi
+  limits:
+    cpu: 750m  
+    memory: 1Gi
+
+# Additional Container Envs
+env: |
+  - name: HASURA_ADMIN_SECRET
+    valueFrom:
+      secretKeyRef:
+        key: HASURA_GRAPHQL_ADMIN_SECRET
+        name: secrets
+  - name: REPO_PROVIDER
+    value: {{ .Values.repoProvider }}    
+  {{- if eq .Values.repoProvider "PostgresSQL" }}         
+  - name: DB_HOST
+    valueFrom:
+      secretKeyRef:
+        key: DB_HOST
+        name: secrets
+  - name: DB_NAME
+    valueFrom:
+      secretKeyRef:
+        key: DB_NAME
+        name: secrets
+  - name: DB_USER
+    valueFrom:
+      secretKeyRef:
+        key: DB_USERNAME
+        name: secrets 
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        key: DB_PASSWORD
+        name: secrets    
+  - name: DB_PORT
+    value: "5432"  
+  {{- end }}                                           
+  - name: HASURA_URL
+    value: {{ .Values.hasuraUrl }}
+  - name: WHATSAPP_PROVIDER
+    value: {{ .Values.whatsappProvider }}  
+  {{- if eq .Values.whatsappProvider "Kaleyra" }}      
+  - name: KALEYRA_SID
+    valueFrom:
+      secretKeyRef:
+        key: KALEYRA_SID
+        name: secrets 
+  - name: KALEYRA_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: KALEYRA_API_KEY
+        name: secrets  
+  {{- end }}              
+  - name: WHATSAPP_BUSINESS_NUMBER
+    valueFrom:
+      secretKeyRef:
+        key: WHATSAPP_BUSINESS_NUMBER
+        name: secrets  
+  - name: ROOT_TENANTID
+    value: "in"
+  - name: ENCRYPTION_SERVICE_HOST
+    value: {{ .Values.encryptionServiceHost }}

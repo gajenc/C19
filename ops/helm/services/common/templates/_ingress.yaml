@@ -1,0 +1,55 @@
+{{- define "common.ingress" -}}
+{{- $serviceName := include "common.name" . -}}
+{{- if .Values.ingress.enabled -}}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ template "common.namespace" . }}
+  annotations:
+{{- tpl  .Values.ingress.annotations . | nindent 4 }}   
+{{- if .Values.ingress.waf.enabled }}      
+{{- toYaml .Values.ingress.waf.annotations | nindent 4 }} 
+{{- end  }}
+{{- if .Values.ingress.additionalAnnotations }}                                   
+  {{- tpl  .Values.ingress.additionalAnnotations . | nindent 4 }}
+{{- end }} 
+  labels:
+{{- include "common.labels" . | nindent 4 }}                            
+spec:
+  rules:
+  -
+{{- if eq .Values.global.uriScheme "https" }}   
+{{- if .Values.ingress.host }}   
+  {{- tpl  .Values.ingress.host . | nindent 2 }}
+{{- else if .Values.ingress.hostName }} 
+    host: {{ tpl .Values.ingress.hostName . }}
+{{- else }}  
+    host: {{ .Values.global.domain }}
+{{- end }}  
+{{- end }} 
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Values.ingress.serviceName | default ( $serviceName ) }}
+          servicePort: {{ .Values.ingress.servicePort | default .Values.httpPort }}          
+        path: /{{ tpl .Values.ingress.path . }}
+{{- if eq .Values.global.uriScheme "https" }}        
+  tls:
+{{- if .Values.ingress.tls }}
+  {{- tpl  .Values.ingress.tls . | nindent 2 }}
+{{- else }} 
+{{- if .Values.ingress.hostName }}
+  - hosts: 
+    - {{ tpl .Values.ingress.hostName . }}
+    secretName: {{ tpl .Values.ingress.hostName . }}-tls-certs
+{{- else }}      
+  - hosts:
+    - {{ .Values.global.domain }}
+    secretName: {{ .Values.global.domain }}-tls-certs 
+{{- end }}    
+{{- end }} 
+{{- end }}        
+{{- end }} 
+{{- end -}} 

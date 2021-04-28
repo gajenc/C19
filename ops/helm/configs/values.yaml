@@ -1,0 +1,13 @@
+global:
+  uriScheme : "http"
+  domain : "domain.nip.io"
+  namespace: "default"
+  
+configs:
+secrets:
+  namespace: default
+  dbUrl: ""
+  data:
+    # Length 64
+    HASURA_GRAPHQL_ADMIN_SECRET : ""
+    HASURA_GRAPHQL_DATABASE_URL : ""

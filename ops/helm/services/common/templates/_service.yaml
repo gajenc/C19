@@ -1,0 +1,25 @@
+{{- define "common.service" -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "common.name" . }}
+  namespace: {{ template "common.namespace" . }} 
+  annotations: 
+{{- if .Values.ingress.zuul }} 
+    zuul/route-path: {{ .Values.ingress.context }}
+{{- end }}
+{{- if and .Values.service .Values.service.additionalAnnotations}}                                   
+  {{- tpl  .Values.service.additionalAnnotations . | nindent 4 }}
+{{- end }} 
+  labels:
+{{- include "common.labels" . | nindent 4 }}   
+spec:
+  selector: 
+{{- include "common.labels" . | nindent 4 }}    
+  ports:
+  - name: http
+    port: {{ .Values.httpPort }}
+    targetPort: {{ .Values.httpPort }}  
+  type: {{ .Values.service.type }}  
+{{- end -}}

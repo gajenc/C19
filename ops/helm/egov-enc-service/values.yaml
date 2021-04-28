@@ -1,0 +1,54 @@
+# Common Labels
+labels:
+  app: "egov-enc-service"
+
+# Container Configs
+image:
+  repository: "egovio/egov-enc-service"
+  tag: "swasth-v1.0.1"
+replicas: "1"
+masterPasswordProvider: "awskms"
+awsKmsMasterPasswordKeyId: ""
+healthChecks:
+  enabled: true
+  livenessProbePath: "/egov-enc-service/health"
+  readinessProbePath: "/egov-enc-service/health"
+resources: |
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m  
+    memory: 768Mi
+
+# Additional Container Envs
+env: |
+  - name: SPRING_DATASOURCE_URL
+    valueFrom:
+      secretKeyRef:
+        key: SPRING_DATASOURCE_URL
+        name: secrets
+  - name: SPRING_DATASOURCE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        key: DB_USERNAME
+        name: secrets
+  - name: SPRING_DATASOURCE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        key: DB_PASSWORD
+        name: secrets                
+  - name: MASTER_PASSWORD_PROVIDER
+    value: {{ .Values.masterPasswordProvider }}
+  - name: NUMBER_OF_SYMMETRIC_ACTIVE_KEYS_PER_TENANT
+    value: "100" 
+  - name: AWS_KMS_MASTER_PASSWORD_KEY_ID
+    value: {{ .Values.awsKmsMasterPasswordKeyId }}
+  - name: FLYWAY_ENABLED
+    value: "false"
+  - name: SERVER_PORT
+    value: "8080"    
+  - name: SERVER_CONTEXT_PATH
+    value: /egov-enc-service      
+  - name: SERVER_SERVLET_CONTEXT_PATH
+    value: /egov-enc-service      
