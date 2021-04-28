@@ -7,11 +7,6 @@ let messages = {
       en_IN: 'Please select the patient whose vitals you want to add:\n\n'
     }
   },
-  userConsent: {
-    prompt: {
-      en_IN: 'Consent Message'
-    }
-  },
   vitalsSpo2: {
     prompt: {
       en_IN: 'Please look for the oximeter, put it on your finger and let the number stabilize. Now tell me what your pulse oximeter says? \n\n1. SpO2 is 95 and above \n2. SpO2 is between 90 and 94% \n3. SpO2 is below 90%'
@@ -42,6 +37,11 @@ let messages = {
     en_IN: '*Looks like you have a fever.* You will need to take medication to bring the temperature back down. Please contact your doctor and I will check up on you again in a few hours to see how you are feeling!\n\n More information regarding COVID-19 and nearby care facilities is available here https://life.coronasafe.network'
   },
   exitProgram: {
+    exitPersonSelection: {
+      prompt: {
+        en_IN: 'Please select the patient for whom you want to exit the program:\n\n'
+      }
+    },
     exitReason: {
       prompt: {
         en_IN: 'Please tell me why you want to exit the self management program? \n1. I have recovered now\n2. My doctor’s recommendation\n3. I didn’t find the program useful'

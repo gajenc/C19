@@ -397,7 +397,7 @@ const selfCareFlow = {
         states: {
           prompt: {
             onEntry: assign((context, event) => {
-              let message = dialog.get_message(messages.selectPerson.prompt, context.user.locale);
+              let message = dialog.get_message(messages.exitProgram.exitPersonSelection.prompt, context.user.locale);
               let persons = context.persons;
               let grammer = [];
               for (let i = 0; i < persons.length; i++) {
