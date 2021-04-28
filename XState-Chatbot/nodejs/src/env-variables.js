@@ -7,7 +7,7 @@ const envVariables = {
     port: process.env.SERVICE_PORT || 8080,
     contextPath: process.env.CONTEXT_PATH || '/xstate-chatbot',
 
-    whatsAppProvider: process.env.WHATSAPP_PROVIDER || 'GupShup',
+    whatsAppProvider: process.env.WHATSAPP_PROVIDER || 'console',
 
     serviceProvider: process.env.SERVICE_PROVIDER || 'swasth',
 
