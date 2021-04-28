@@ -1,0 +1,49 @@
+- table:
+    schema: public
+    name: c19_triage
+  object_relationships:
+  - name: person
+    using:
+      foreign_key_constraint_on: person_id
+- table:
+    schema: public
+    name: c19_vitals
+  object_relationships:
+  - name: person
+    using:
+      foreign_key_constraint_on: person_id
+- table:
+    schema: public
+    name: person
+  object_relationships:
+  - name: c19_triage
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: c19_triage
+        column_mapping:
+          uuid: person_id
+  - name: person_detail
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: person_details
+        column_mapping:
+          uuid: person_id
+  array_relationships:
+  - name: c19_vitals
+    using:
+      foreign_key_constraint_on:
+        column: person_id
+        table:
+          schema: public
+          name: c19_vitals
+- table:
+    schema: public
+    name: person_details
+  object_relationships:
+  - name: person
+    using:
+      foreign_key_constraint_on: person_id

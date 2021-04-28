@@ -1,17 +1,26 @@
-FROM egovio/apline-jre:8u121
+FROM egovio/alpine-maven-builder-jdk-8:1-master-NA-6036091e AS build  
+ARG WORK_DIR
+WORKDIR /app
 
-# INSTRUCTIONS ON HOW TO BUILD JAR:
-# Move to the location where pom.xml is exist in project and build project using below command
-# "mvn clean package"
-COPY /target/egov-enc-service-1.0.0.jar /opt/egov/egov-enc-service.jar
+# copy the project files
+COPY ${WORK_DIR}/pom.xml ./pom.xml
+COPY ${WORK_DIR}/start.sh ./start.sh
 
-COPY start.sh /usr/bin/start.sh
+# not useful for stateless builds
+# RUN mvn -B dependency:go-offline
 
-RUN chmod +x /usr/bin/start.sh
+COPY ${WORK_DIR}/src ./src
+RUN mvn -B -f /app/pom.xml package
 
-CMD ["/usr/bin/start.sh"]
 
-# NOTE: the two 'RUN' commands can probably be combined inside of a single
-# script (i.e. RUN build-and-install-app.sh) so that we can also clean up the
-# extra files created during the `mvn package' command. that step inflates the
-# resultant image by almost 1.0GB.
+# Create runtime image
+FROM egovio/8-openjdk-alpine
+
+
+WORKDIR /opt/egov
+
+COPY --from=build /app/target/*.jar /app/start.sh /opt/egov/
+
+RUN chmod +x /opt/egov/start.sh
+
+CMD ["/opt/egov/start.sh"]
