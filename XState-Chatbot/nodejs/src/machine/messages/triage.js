@@ -41,7 +41,7 @@ let messages = {
   },
   symptoms: {
     prompt: {
-      en_IN: 'Thanks for this information {{name}}! Do you have one or more of these complaints?: \n- Fever\n- Cough with or without spit/Sore throat\n- Loss of smell/taste\n- Runny nose\n- Difficulty breathing/Persistent pain/pressure in the chest\n- Muscle pain\n- Nausea & loose motions\n- Bluish discolorations of lips/face\n- Inability to eat / drink / walk\n'
+      en_IN: 'Thanks for this information {{name}}! Do you have one or more of these complaints?: \n- Fever\n- Cough with or without spit/Sore throat\n- Loss of smell/taste\n- Runny nose\n- Difficulty breathing/Persistent pain/pressure in the chest\n- Muscle pain\n- Nausea & loose motions\n'
     }
   },
   rtpcr: {
