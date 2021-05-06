@@ -19,12 +19,43 @@
   - name: o2_user
     using:
       foreign_key_constraint_on: user_id
+  array_relationships:
+  - name: o2_services
+    using:
+      foreign_key_constraint_on:
+        column: provider_id
+        table:
+          schema: public
+          name: o2_service
 - table:
     schema: public
     name: o2_provider_feedback
+  object_relationships:
+  - name: o2_requirement
+    using:
+      foreign_key_constraint_on: requirement_id
 - table:
     schema: public
     name: o2_requirement
+  object_relationships:
+  - name: o2_user
+    using:
+      foreign_key_constraint_on: user_id
+  array_relationships:
+  - name: o2_provider_feedbacks
+    using:
+      foreign_key_constraint_on:
+        column: requirement_id
+        table:
+          schema: public
+          name: o2_provider_feedback
+  - name: o2_services
+    using:
+      foreign_key_constraint_on:
+        column: search_id
+        table:
+          schema: public
+          name: o2_service
   event_triggers:
   - name: o2_requirement_trigger
     definition:
@@ -42,6 +73,13 @@
 - table:
     schema: public
     name: o2_service
+  object_relationships:
+  - name: o2_provider
+    using:
+      foreign_key_constraint_on: provider_id
+  - name: o2_requirement
+    using:
+      foreign_key_constraint_on: search_id
   event_triggers:
   - name: o2_service_trigger
     definition:
@@ -60,6 +98,15 @@
 - table:
     schema: public
     name: o2_user
+  object_relationships:
+  - name: o2_provider
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: o2_provider
+        column_mapping:
+          uuid: user_id
   array_relationships:
   - name: o2_providers
     using:
@@ -68,6 +115,13 @@
         table:
           schema: public
           name: o2_provider
+  - name: o2_requirements
+    using:
+      foreign_key_constraint_on:
+        column: user_id
+        table:
+          schema: public
+          name: o2_requirement
 - table:
     schema: public
     name: person

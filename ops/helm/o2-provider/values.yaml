@@ -41,3 +41,14 @@ env: |
       secretKeyRef:
         key: API_TOKEN
         name: secrets        
+  - name: YM_AUTH_TOKEN
+    valueFrom:
+      secretKeyRef:
+        key: YM_AUTH_TOKEN
+        name: secrets  
+  - name: YM_BOT_ID
+    value: {{ .Values.ymBotId | quote }}  
+  - name: YM_SEND_MESSAGE_URL
+    value: {{ .Values.ymSendMsgUrl | quote }}  
+  - name: REQUIREMENT_EXPIRE_MINUTES
+    value: {{ .Values.requirementExpireMinutes | quote }}          
