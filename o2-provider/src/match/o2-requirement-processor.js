@@ -106,9 +106,9 @@ const processO2Service = async (o2Service) => {
   };
   const response = await callHasura(query, variable, 'getO2Service');
   const service = response.data.o2_service[0];
-  const requirementStatus = service.o2_requirement.status;
+  const requirementStatus = service.o2_requirement.active;
   if (requirementStatus) {
-    service.o2_requirement.status = undefined;
+    service.o2_requirement.active = undefined;
     const decryptedService = await decryptObject(service);
     const providerDetails = `Supplier Name: ${decryptedService.o2_provider.o2_user.name}\nMobile: ${decryptedService.o2_provider.o2_user.mobile}`;
     const message = {
