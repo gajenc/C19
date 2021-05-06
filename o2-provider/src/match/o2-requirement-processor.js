@@ -61,7 +61,7 @@ const processO2Requirement = async (o2Requirement) => {
       for (const provider of providers) {
         let user = provider.o2_user;
         user = decryptObject(user);
-        const ymResponse = await sendProviderNotificationMessage(provider.o2_user.mobile, {
+        const ymResponse = await sendProviderNotificationMessage(user.mobile, {
           id: o2Requirement.id,
           pin_code: o2Requirement.pin_code,
           city: o2Requirement.city,

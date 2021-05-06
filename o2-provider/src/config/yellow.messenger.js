@@ -31,6 +31,11 @@ instance.interceptors.response.use(
   function (response) {
     // Any status code that lie within the range of 2xx cause this function to trigger
     // Do something with response data
+    if (appConfigs.env === 'development') {
+      logger.info(`Response from ${ymUrl} \nResponse Body: ${JSON.stringify(response.data)}`);
+    } else {
+      logger.info(`Response from ${ymUrl}, Status: ${response.status}`);
+    }
     return response;
   },
   function (error) {
