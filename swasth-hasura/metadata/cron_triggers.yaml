@@ -1,1 +1,13 @@
-[]
+- name: o2_requirement_cron
+  webhook: http://o2-provider:8080/v1/triggers/o2-requirement-expire
+  schedule: '*/15 * * * *'
+  include_in_metadata: true
+  payload: {}
+  retry_conf:
+    num_retries: 3
+    timeout_seconds: 60
+    tolerance_seconds: 21600
+    retry_interval_seconds: 30
+  headers:
+  - name: x-auth-token
+    value_from_env: API_TOKEN
