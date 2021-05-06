@@ -3,9 +3,8 @@ const validate = require('../../middlewares/validate');
 const providerValidation = require('../../validations/provider.validation');
 const providerController = require('../../controllers/provider.controller');
 
-const router = express.Router();
-
-router.route('/register').post(validate(providerValidation.registerProvider), providerController.registerProvider);
+const registerProviderRoute = express.Router();
+registerProviderRoute.route('/').post(validate(providerValidation.registerProvider), providerController.registerProvider);
 
 // router
 //   .route('/:userId')
@@ -13,4 +12,6 @@ router.route('/register').post(validate(providerValidation.registerProvider), pr
 //   .patch(auth('manageUsers'), validate(userValidation.updateUser), userController.updateUser)
 //   .delete(auth('manageUsers'), validate(userValidation.deleteUser), userController.deleteUser);
 
-module.exports = router;
+module.exports = {
+  registerProviderRoute,
+};

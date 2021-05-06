@@ -8,6 +8,7 @@ const config = require('./config/config');
 const morgan = require('./config/morgan');
 const routes = require('./routes/v1');
 const { errorConverter, errorHandler } = require('./middlewares/error');
+const { authHandler } = require('./middlewares/auth');
 const ApiError = require('./utils/ApiError');
 
 const app = express();
@@ -35,6 +36,7 @@ app.use(compression());
 app.use(cors());
 app.options('*', cors());
 
+app.use(authHandler);
 // limit repeated failed requests to auth endpoints
 // if (config.env === 'production') {
 //   app.use('/v1/auth', authLimiter);

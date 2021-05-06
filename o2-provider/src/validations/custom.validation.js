@@ -1,5 +1,3 @@
-const Joi = require('joi');
-
 const objectId = (value, helpers) => {
   if (!value.match(/^[0-9a-fA-F]{24}$/)) {
     return helpers.message('"{{#label}}" must be a valid mongo id');
@@ -17,7 +15,15 @@ const password = (value, helpers) => {
   return value;
 };
 
+const hasuraAdminSecret = (value, helpers) => {
+  if (value.length === 0 || value.length === 64) {
+    return value;
+  }
+  return helpers.message('Hasura admin secret length to be 64 chars or nil');
+};
+
 module.exports = {
   objectId,
   password,
+  hasuraAdminSecret,
 };

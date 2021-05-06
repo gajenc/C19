@@ -1,0 +1,43 @@
+# Common Labels
+labels:
+  app: "o2-provider"
+
+# Ingress Configs
+ingress:
+  enabled: true
+  additionalAnnotations: |
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  path: "o2(/|$)(.*)"  
+
+# Container Configs
+image:
+  repository: "egovio/o2-provider"
+  tag: "v1.0.0"
+replicas: "1"
+httpPort: "3000"
+resources: |
+  requests:
+    cpu: 500m
+    memory: 256Mi
+  limits:
+    cpu: 500m  
+    memory: 256Mi
+
+# Additional Container Envs
+env: |
+  - name: HASURA_ADMIN_SECRET
+    valueFrom:
+      secretKeyRef:
+        key: HASURA_GRAPHQL_ADMIN_SECRET
+        name: secrets                                  
+  - name: HASURA_URL
+    value: {{ .Values.hasuraUrl }}
+  - name: ROOT_TENANTID
+    value: "in"
+  - name: ENCRYPTION_SERVICE_HOST
+    value: {{ .Values.encryptionServiceHost }}
+  - name: API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        key: API_TOKEN
+        name: secrets        

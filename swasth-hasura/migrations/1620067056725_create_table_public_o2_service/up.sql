@@ -1,0 +1,2 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE "public"."o2_service"("uuid" uuid NOT NULL DEFAULT gen_random_uuid(), "search_id" uuid NOT NULL, "type" text, "expires_at" text, "status" text NOT NULL, "provider_id" uuid NOT NULL, PRIMARY KEY ("uuid") , FOREIGN KEY ("search_id") REFERENCES "public"."o2_requirement"("uuid") ON UPDATE cascade ON DELETE cascade, FOREIGN KEY ("provider_id") REFERENCES "public"."o2_provider"("uuid") ON UPDATE cascade ON DELETE cascade);
