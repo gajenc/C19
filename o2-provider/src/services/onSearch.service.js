@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 const httpStatus = require('http-status');
 const ApiError = require('../utils/ApiError');
 const { callHasura } = require('./util/hasura');
@@ -8,12 +9,12 @@ const logger = require('../config/logger');
 // Make the change after the cron job is functional as the o2_service will be created there.
 const persistService = async (service) => {
   const query = `
-  mutation update_o2_service($searchId: uuid!, $providerId: uuid!, $status: String!, $expiresAt:String!) {
-    update_o2_service(where: {search_id: {_eq: $searchId}, provider_id: {_eq: $providerId}}, _set: {status: $status, expires_at: $expiresAt}) {
-      affected_rows
+    mutation update_o2_service($search_id: Int!, $provider_id: uuid!, $status: String!, $expires_at: String!) {
+      update_o2_service(where: {o2_requirement: {id: {_eq: $search_id}}, provider_id: {_eq: $provider_id}}, _set: {status: $status, expires_at: $expires_at}){
+        affected_rows
+      }
     }
-  }   
-    `;
+  `;
   const variable = service;
   const response = await callHasura(query, variable, 'update_o2_service');
   if (response.errors !== undefined) {
@@ -38,9 +39,9 @@ const registerService = async (serviceBody) => {
       throw new ApiError(httpStatus.BAD_REQUEST, 'No supplier registered for this mobile!');
     }
     const serviceDbObject = {
-      searchId: service.search_id,
-      providerId: providerId[0].o2_providers[0].uuid,
-      expiresAt: service.expires_at,
+      search_id: service.search_id,
+      provider_id: providerId[0].o2_providers[0].uuid,
+      expires_at: service.expires_at,
       status: service.status,
     };
     // TODO group by status and bulk update
