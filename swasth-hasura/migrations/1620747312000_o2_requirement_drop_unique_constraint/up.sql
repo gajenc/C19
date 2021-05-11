@@ -1,0 +1,1 @@
+DROP INDEX o2_requirement_user_id_type_idx;
