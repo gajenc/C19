@@ -1,12 +1,13 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
-const {processO2Requirement, processO2Service} = require('../match/o2-requirement-processor')
+const { processO2Requirement, processO2Service } = require('../match/o2-requirement-processor')
 const appConfigs = require('../config/config')
 
 const ApiError = require('../utils/ApiError');
 const { callHasura } = require('../services/util/hasura');
 const logger = require('../config/logger');
-
+const { decryptObject } = require('../services/encryption.service');
+const { sendRequestExpiredMessage } = require('../match/yellow.messenger');
 
 const o2RequirementTrigger = catchAsync(async (req, res) => {
   await processO2Requirement(req.body.event.data.new)
@@ -23,26 +24,37 @@ const o2ServiceTrigger = catchAsync(async (req, res) => {
 });
 
 const o2RequirementExpire = catchAsync(async (req, res) => {
-  var minutesAgo = new Date( Date.now() - 1000 * 60 * appConfigs.requirementExpireMinutes );
+  const minutesAgo = new Date(Date.now() - 1000 * 60 * appConfigs.requirementExpireMinutes);
 
   const query = `
-  mutation update_o2_requirement($createdAt: timestamptz!) {
-    update_o2_requirement(where: {created_at: {_lt: $createdAt}, active: {_eq: true}}, _set: {active: false}) {
-      affected_rows
+    mutation update_o2_requirement($createdAt: timestamptz!) {
+      update_o2_requirement(where: {created_at: {_lt: $createdAt}, active: {_eq: true}}, _set: {active: false}) {
+        returning{
+          o2_user{
+            mobile
+          }
+        }
+      }
     }
-  } 
   `;
   const variable = {
-    createdAt: minutesAgo
-  }
+    createdAt: minutesAgo,
+  };
   logger.info(`Attempting to expire records since ${minutesAgo}`)
   const response = await callHasura(query, variable, 'update_o2_requirement');
   if (response.errors !== undefined) {
     logger.error(JSON.stringify(response.errors));
     throw new ApiError(httpStatus.BAD_REQUEST, 'Failed to register event');
-  }  
+  }
 
-  logger.info(`${response.data.update_o2_requirement.affected_rows} entries expired`)
+  const users = response.data.update_o2_requirement.returning;
+  const decryptedUsers = await decryptObject(users);
+
+  for(const user of decryptedUsers) {
+    await sendRequestExpiredMessage(user.o2_user.mobile);
+  }
+
+  logger.info(`${response.data.update_o2_requirement.returning.length} entries expired`)
 
   res.status(httpStatus.OK).send();
 });

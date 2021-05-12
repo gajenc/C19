@@ -62,48 +62,23 @@ const sendProviderNotificationMessage = async (mobile, message) => {
   return response;
 };
 
-const sendRequestExpiredMessage = async (mobile, message) => {
+const sendRequestExpiredMessage = async (mobile) => {
   const requestBody = {
     body: {
-      to: '',
+      to: `91${mobile}`,
       ttl: 86400,
       type: 'template',
       template: {
         namespace: '7d08a43e_5c20_45e3_a26e_aa9e0e4ab729',
-        name: 'search_for_supplier',
+        name: 'search_for_supplier_new_without_button',
         language: {
           policy: 'deterministic',
           code: 'en',
         },
-        components: [
-          {
-            type: 'button',
-            sub_type: 'quick_reply',
-            index: '0',
-            parameters: [
-              {
-                type: 'payload',
-                payload: 'search_for_supplier:continue',
-              },
-            ],
-          },
-          {
-            type: 'button',
-            sub_type: 'quick_reply',
-            index: '1',
-            parameters: [
-              {
-                type: 'payload',
-                payload: 'search_for_supplier:cancel',
-              },
-            ],
-          },
-        ],
       },
     },
   };
 
-  requestBody.body.to = `91${mobile}`;
   const response = await ymClient.post('', requestBody);
   return response;
 };
