@@ -111,7 +111,10 @@ const processO2Service = async (o2Service) => {
   if (requirementStatus) {
     service.o2_requirement.active = undefined;
     const decryptedService = await decryptObject(service);
-    const providerDetails = `Supplier Name: ${decryptedService.o2_provider.o2_user.name}, Mobile Number: ${decryptedService.o2_provider.o2_user.mobile}`;
+    let providerDetails = '';
+    providerDetails += `Supplier Name: ${decryptedService.o2_provider.o2_user.name}`;
+    providerDetails += `, Mobile Number: ${decryptedService.o2_provider.o2_user.mobile}`;
+    providerDetails += ` https://wa.me/send?phone=91${decryptedService.o2_provider.o2_user.mobile}&text=Hi`;
     const message = {
       providerDetails,
     };
