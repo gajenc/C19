@@ -111,7 +111,7 @@ const processO2Service = async (o2Service) => {
   if (requirementStatus) {
     service.o2_requirement.active = undefined;
     const decryptedService = await decryptObject(service);
-    const providerDetails = `Supplier Name: ${decryptedService.o2_provider.o2_user.name}\nMobile: ${decryptedService.o2_provider.o2_user.mobile}`;
+    const providerDetails = `Supplier Name: ${decryptedService.o2_provider.o2_user.name}, Mobile Number: ${decryptedService.o2_provider.o2_user.mobile}`;
     const message = {
       providerDetails,
     };
