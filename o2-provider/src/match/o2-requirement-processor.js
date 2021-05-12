@@ -65,6 +65,7 @@ const processO2Requirement = async (o2Requirement) => {
           id: o2Requirement.id.toString(),
           pin_code: o2Requirement.pin_code,
           city: o2Requirement.city,
+          uuid: o2Requirement.uuid,
         });
         let status = '';
         if (ymResponse.status === 200) {

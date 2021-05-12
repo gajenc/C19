@@ -3,7 +3,7 @@ const ymClient = require('../config/yellow.messenger');
 const sendProviderNotificationMessage = async (mobile, message) => {
   const requestBody = {
     body: {
-      to: '',
+      to: `91${mobile}`,
       ttl: 86400,
       type: 'template',
       template: {
@@ -19,15 +19,15 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'text',
-                text: '${requestID}',
+                text: `${message.id}`,
               },
               {
                 type: 'text',
-                text: '${pinCode}',
+                text: `${message.pin_code}`,
               },
               {
                 type: 'text',
-                text: '${city}',
+                text: `${message.city}`,
               },
             ],
           },
@@ -38,7 +38,7 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'payload',
-                payload: 'SENDER_NOTIFICATOIN:${senderID}:ACCEPT',
+                payload: `SENDER_NOTIFICATOIN:${message.uuid}:ACCEPT`,
               },
             ],
           },
@@ -49,7 +49,7 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'payload',
-                payload: 'SENDER_NOTIFICATOIN:${senderID}:REJECT',
+                payload: `SENDER_NOTIFICATOIN:${message.uuid}:REJECT`,
               },
             ],
           },
@@ -57,10 +57,6 @@ const sendProviderNotificationMessage = async (mobile, message) => {
       },
     },
   };
-  requestBody.body.to = `91${mobile}`;
-  requestBody.body.template.components[0].parameters[0].text = message.id;
-  requestBody.body.template.components[0].parameters[1].text = message.pin_code;
-  requestBody.body.template.components[0].parameters[2].text = message.city;
 
   const response = await ymClient.post('', requestBody);
   return response;
