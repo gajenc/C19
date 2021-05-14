@@ -2,10 +2,10 @@ const axios = require('axios');
 const appConfigs = require('./config');
 const logger = require('./logger');
 
-const ymUrl = appConfigs.ymUrl.replace('{{botId}}', appConfigs.ymBotId);
+const ymHost = appConfigs.ymHost;
 
 const instance = axios.create({
-  baseURL: ymUrl,
+  baseURL: ymHost,
 });
 instance.defaults.headers.common['x-auth-token'] = appConfigs.ymAuthToken;
 
@@ -32,16 +32,16 @@ instance.interceptors.response.use(
     // Any status code that lie within the range of 2xx cause this function to trigger
     // Do something with response data
     if (appConfigs.env === 'development') {
-      logger.info(`Response from ${ymUrl} \nResponse Body: ${JSON.stringify(response.data)}`);
+      logger.info(`Response from ${ymHost} \nResponse Body: ${JSON.stringify(response.data)}`);
     } else {
-      logger.info(`Response from ${ymUrl}, Status: ${response.status}`);
+      logger.info(`Response from ${ymHost}, Status: ${response.status}`);
     }
     return response;
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
-    logger.error(`Call to ${ymUrl} failed with status code: ${error.response.status}`);
+    logger.error(`Call to ${ymHost} failed with status code: ${error.response.status}`);
     return Promise.reject(error);
   }
 );

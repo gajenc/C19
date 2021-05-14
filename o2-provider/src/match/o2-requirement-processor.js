@@ -65,6 +65,7 @@ const processO2Requirement = async (o2Requirement) => {
           id: o2Requirement.id.toString(),
           pin_code: o2Requirement.pin_code,
           city: o2Requirement.city,
+          uuid: o2Requirement.uuid,
         });
         let status = '';
         if (ymResponse.status === 200) {
@@ -110,7 +111,10 @@ const processO2Service = async (o2Service) => {
   if (requirementStatus) {
     service.o2_requirement.active = undefined;
     const decryptedService = await decryptObject(service);
-    const providerDetails = `Supplier Name: ${decryptedService.o2_provider.o2_user.name}\nMobile: ${decryptedService.o2_provider.o2_user.mobile}`;
+    let providerDetails = '';
+    providerDetails += `Supplier Name: ${decryptedService.o2_provider.o2_user.name}`;
+    providerDetails += `, Mobile Number: ${decryptedService.o2_provider.o2_user.mobile}`;
+    providerDetails += `    https://api.whatsapp.com/send?phone=91${decryptedService.o2_provider.o2_user.mobile}&text=Hi`;
     const message = {
       providerDetails,
     };

@@ -1,9 +1,13 @@
 const ymClient = require('../config/yellow.messenger');
+const appConfigs = require('../config/config');
+
+const sendMessageEndpoint = appConfigs.ymSendMessageEndpoint.replace('{{botId}}', appConfigs.ymBotId);
+const sendExpiryNotificationEndpoint = appConfigs.ymExpiryNotificationEndpoint.replace('{{botId}}', appConfigs.ymBotId);
 
 const sendProviderNotificationMessage = async (mobile, message) => {
   const requestBody = {
     body: {
-      to: '',
+      to: `91${mobile}`,
       ttl: 86400,
       type: 'template',
       template: {
@@ -19,15 +23,15 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'text',
-                text: '${requestID}',
+                text: `${message.id}`,
               },
               {
                 type: 'text',
-                text: '${pinCode}',
+                text: `${message.pin_code}`,
               },
               {
                 type: 'text',
-                text: '${city}',
+                text: `${message.city}`,
               },
             ],
           },
@@ -38,7 +42,7 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'payload',
-                payload: 'SENDER_NOTIFICATOIN:${senderID}:ACCEPT',
+                payload: `SENDER_NOTIFICATOIN:${message.uuid}:ACCEPT`,
               },
             ],
           },
@@ -49,7 +53,7 @@ const sendProviderNotificationMessage = async (mobile, message) => {
             parameters: [
               {
                 type: 'payload',
-                payload: 'SENDER_NOTIFICATOIN:${senderID}:REJECT',
+                payload: `SENDER_NOTIFICATOIN:${message.uuid}:REJECT`,
               },
             ],
           },
@@ -57,65 +61,53 @@ const sendProviderNotificationMessage = async (mobile, message) => {
       },
     },
   };
-  requestBody.body.to = `91${mobile}`;
-  requestBody.body.template.components[0].parameters[0].text = message.id;
-  requestBody.body.template.components[0].parameters[1].text = message.pin_code;
-  requestBody.body.template.components[0].parameters[2].text = message.city;
 
-  const response = await ymClient.post('', requestBody);
+  const response = await ymClient.post(sendMessageEndpoint, requestBody);
+  return response;
+};
+
+const sendExpiryNotificationToYmBot = async (mobile, message) => {
+  const expiryNotifyBody = {
+    data: {
+      rid: `${message.search_id}`,
+      event: 'request_expired',
+      Message: 'Request Expired',
+    },
+    sender: '121',
+    bot: `${appConfigs.ymBotId}`,
+  };
+  const response = await ymClient.post(sendExpiryNotificationEndpoint, expiryNotifyBody);
   return response;
 };
 
 const sendRequestExpiredMessage = async (mobile, message) => {
   const requestBody = {
     body: {
-      to: '',
+      to: `91${mobile}`,
       ttl: 86400,
       type: 'template',
       template: {
         namespace: '7d08a43e_5c20_45e3_a26e_aa9e0e4ab729',
-        name: 'search_for_supplier',
+        name: 'search_for_supplier_new_without_button',
         language: {
           policy: 'deterministic',
           code: 'en',
         },
-        components: [
-          {
-            type: 'button',
-            sub_type: 'quick_reply',
-            index: '0',
-            parameters: [
-              {
-                type: 'payload',
-                payload: 'search_for_supplier:continue',
-              },
-            ],
-          },
-          {
-            type: 'button',
-            sub_type: 'quick_reply',
-            index: '1',
-            parameters: [
-              {
-                type: 'payload',
-                payload: 'search_for_supplier:cancel',
-              },
-            ],
-          },
-        ],
       },
     },
   };
 
-  requestBody.body.to = `91${mobile}`;
-  const response = await ymClient.post('', requestBody);
+  const response = await ymClient.post(sendMessageEndpoint, requestBody);
+
+  await sendExpiryNotificationToYmBot(mobile, message);
+
   return response;
 };
 
 const sendAcceptedProviderDetails = async (mobile, message) => {
   const requestBody = {
     body: {
-      to: '',
+      to: `${mobile}`,
       ttl: 'P1D',
       type: 'hsm',
       hsm: {
@@ -127,16 +119,35 @@ const sendAcceptedProviderDetails = async (mobile, message) => {
         },
         localizable_params: [
           {
-            default: '${DEALER DETAILS}',
+            default: `${message.providerDetails}`,
           },
         ],
       },
     },
   };
-  requestBody.body.to = `91${mobile}`;
-  requestBody.body.hsm.localizable_params[0].default = message.providerDetails;
 
-  const response = await ymClient.post('', requestBody);
+  const response = await ymClient.post(sendMessageEndpoint, requestBody);
+  return response;
+};
+
+const sendContinuingSearchMessage = async (mobile) => {
+  const requestBody = {
+    body: {
+      to: `91${mobile}`,
+      ttl: 'P1D',
+      type: 'hsm',
+      hsm: {
+        namespace: '7d08a43e_5c20_45e3_a26e_aa9e0e4ab729',
+        element_name: 'supplier_not_found',
+        language: {
+          policy: 'deterministic',
+          code: 'en',
+        },
+      },
+    },
+  };
+
+  const response = await ymClient.post(sendMessageEndpoint, requestBody);
   return response;
 };
 
@@ -144,4 +155,5 @@ module.exports = {
   sendProviderNotificationMessage,
   sendRequestExpiredMessage,
   sendAcceptedProviderDetails,
+  sendContinuingSearchMessage,
 };

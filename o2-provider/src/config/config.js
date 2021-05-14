@@ -30,9 +30,11 @@ module.exports = {
   port: envVars.PORT,
   hasuraAdminSecret: envVars.HASURA_ADMIN_SECRET,
   hasuraUrl: envVars.HASURA_URL,
-  ymUrl: envVars.YM_SEND_MESSAGE_URL,
+  ymHost: envVars.YM_HOST,
+  ymSendMessageEndpoint: envVars.YM_SEND_MESSAGE_ENDPOINT,
+  ymExpiryNotificationEndpoint: envVars.YM_EXPIRY_NOTIFICATION_ENDPOINT,
   ymBotId: envVars.YM_BOT_ID,
   ymAuthToken: envVars.YM_AUTH_TOKEN,
   apiToken: envVars.API_TOKEN,
-  requirementExpireMinutes: envVars.REQUIREMENT_EXPIRE_MINUTES
+  requirementExpireMinutes: envVars.REQUIREMENT_EXPIRE_MINUTES,
 };

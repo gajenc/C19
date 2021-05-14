@@ -9,8 +9,8 @@ const logger = require('../config/logger');
 // Make the change after the cron job is functional as the o2_service will be created there.
 const persistService = async (service) => {
   const query = `
-    mutation update_o2_service($search_id: Int!, $provider_id: uuid!, $status: String!, $expires_at: String!) {
-      update_o2_service(where: {o2_requirement: {id: {_eq: $search_id}}, provider_id: {_eq: $provider_id}}, _set: {status: $status, expires_at: $expires_at}){
+    mutation update_o2_service($search_id: uuid!, $provider_id: uuid!, $status: String!, $expires_at: String!) {
+      update_o2_service(where: {search_id: {_eq: $search_id}, provider_id: {_eq: $provider_id}}, _set: {status: $status, expires_at: $expires_at}){
         affected_rows
       }
     }
