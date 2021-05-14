@@ -1,5 +1,28 @@
 - name: o2_requirement_cron
-  webhook: http://o2-provider:8080/v1/triggers/o2-requirement-expire
+  webhook: http://o2-provider:3000/v1/triggers/o2-requirement-expire
+  schedule: '*/15 * * * *'
+  include_in_metadata: true
+  payload: {}
+  retry_conf:
+    num_retries: 3
+    timeout_seconds: 60
+    tolerance_seconds: 21600
+    retry_interval_seconds: 30
+  headers:
+  - name: x-auth-token
+    value_from_env: API_TOKEN
+- name: x-state-chatbot
+  webhook: 'http://chatbot:8080/xstate-chatbot/reminder '
+  schedule: 30 4,9,15 * * *
+  include_in_metadata: true
+  payload: {}
+  retry_conf:
+    num_retries: 3
+    timeout_seconds: 60
+    tolerance_seconds: 21600
+    retry_interval_seconds: 30
+- name: o2_requirement_continue
+  webhook: http://o2-provider:3000/v1/triggers/o2-continuing-search
   schedule: '*/15 * * * *'
   include_in_metadata: true
   payload: {}

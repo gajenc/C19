@@ -51,4 +51,11 @@ env: |
   - name: YM_SEND_MESSAGE_URL
     value: {{ .Values.ymSendMsgUrl | quote }}  
   - name: REQUIREMENT_EXPIRE_MINUTES
-    value: {{ .Values.requirementExpireMinutes | quote }}          
+    value: {{ .Values.requirementExpireMinutes | quote }}   
+  - name: YM_HOST
+    value: {{ .Values.ymHost | quote }}      
+  - name: YM_SEND_MESSAGE_ENDPOINT
+    value: /integrations/whatsapp/send?bot={{"{{botId}}"}}
+  - name: YM_EXPIRY_NOTIFICATION_ENDPOINT
+    value: /yellowmessenger/receive/{{"{{botId}}"}}
+
