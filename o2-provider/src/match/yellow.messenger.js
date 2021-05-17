@@ -107,7 +107,7 @@ const sendRequestExpiredMessage = async (mobile, message) => {
 const sendAcceptedProviderDetails = async (mobile, message) => {
   const requestBody = {
     body: {
-      to: `${mobile}`,
+      to: `91${mobile}`,
       ttl: 'P1D',
       type: 'hsm',
       hsm: {
