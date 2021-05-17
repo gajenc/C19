@@ -114,7 +114,7 @@ const processO2Service = async (o2Service) => {
     let providerDetails = '';
     providerDetails += `Supplier Name: ${decryptedService.o2_provider.o2_user.name}`;
     providerDetails += `, Mobile Number: ${decryptedService.o2_provider.o2_user.mobile}`;
-    providerDetails += `    https://api.whatsapp.com/send?phone=91${decryptedService.o2_provider.o2_user.mobile}&text=Hi`;
+    providerDetails += `  https://api.whatsapp.com/send?phone=91${decryptedService.o2_provider.o2_user.mobile}&text=Hi`;
     const message = {
       providerDetails,
     };
