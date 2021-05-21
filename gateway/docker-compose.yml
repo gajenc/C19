@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  healthgateway:
+    image: raghavadss/ohsn-gateway-sdk:1.0
+    container_name: healthgateway
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=DEV
+      - DB_HOST=database
+    ports:
+      - '3000:3000'
+    expose:
+      - '3000'
+    depends_on:
+      - database
+    volumes:
+      - node_modules:/local/services/healthgateway/node_modules
+    command: ./wait-for.sh database:3306 -- /app/app.bin
+  database:
+    image: mysql:5.7
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: healthgateway
+    ports:
+      - '3306:3306'
+    volumes:
+      - dbdata:/var/lib/mysql
+    
+volumes:
+  dbdata:
+  node_modules:  

@@ -1,0 +1,50 @@
+# ingore file
+
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+*.bin
+.pkg-cache
+
+pids
+*.log
+results
+tmp
+
+# Build
+build
+
+# Coverage reports
+coverage
+
+# API keys and secrets
+env
+env.
+env.stage
+env.dev
+
+# Dependency directory
+node_modules
+
+# Editors
+.idea
+*.iml
+.vscode
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/**/*
+
+# ignore yarn.lock
+yarn.lock
+
+.history

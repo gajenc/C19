@@ -1,0 +1,1668 @@
+openapi: 3.0.0
+info:
+  description: |
+    This is the API documentation for health gateway.
+  version: 0.0.2
+  title: Health Gateway API Specification
+  termsOfService: ''
+  contact:
+    email: raghava@mfine.co
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+servers:
+  - description: The staging URL of the telemedicine gateway.
+    url: 'http://healthgateway-stage-1416917905.ap-south-1.elb.amazonaws.com/api/v1'
+paths:
+  /search/service:
+    post:
+      description: >-
+        This API can be used for discovery flows of various services offered by
+        the HSPs.
+      summary: Service Discovery API
+      tags:
+        - Gateway Facing
+      parameters:
+        - name: signature
+          description: The signature created using gateway secret.
+          in: header
+          schema:
+            $ref: '#/components/headers/signature'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/service_search_request'
+            examples:
+              covid_consult_search_request:
+                $ref: '#/components/examples/covid_consult_search_request'
+              scheduled_consult_search_request:
+                $ref: '#/components/examples/scheduled_consult_search_request
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/service_search_response'
+              examples:
+                covid_consult_search_response:
+                  $ref: '#/components/examples/covid_consult_search_response'
+                scheduled_consult_search_response:
+                  $ref: '#/components/examples/scheduled_consult_search_response'
+        '401':
+          description: |
+            **Causes:**  * Expired/Invalid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_response'
+  /confirm/service:
+    post:
+      description: To confirm the provider for a service request.
+      summary: ''
+      tags:
+        - HSP API
+      parameters:
+        - name: signature
+          in: header
+          schema:
+            $ref: '#/components/headers/signature'
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                message:
+                  type: object
+                  properties:
+                    service:
+                      $ref: '#/components/schemas/consultation_service'
+                    person:
+                      allOf:
+                        - $ref: '#/components/schemas/person'
+                    patient:
+                      allOf:
+                        - $ref: '#/components/schemas/person'
+                        - type: object
+                          properties:
+                            relationship:
+                              type: string
+                            clinical_notes:
+                              $ref: '#/components/schemas/clinical_notes'
+                context:
+                  type: object
+                  properties:
+                    app:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                        name:
+                          type: string
+                        api:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                            url:
+                              type: string
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                properties:
+                  consultation_service:
+                    $ref: '#/components/schemas/consultation_service'
+  /on_update/service:
+    post:
+      description: To confirm the provider for a service request.
+      summary: ''
+      tags:
+        - HSP API
+      parameters:
+        - name: signature
+          in: header
+          schema:
+            $ref: '#/components/headers/signature'
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                message:
+                  type: object
+                  properties:
+                    consultation_service:
+                      $ref: '#/components/schemas/consultation_service'
+                    service_change:
+                      $ref: '#/components/schemas/service_change'
+                context:
+                  type: object
+                  properties: {}
+            examples:
+              default:
+                value:
+                  message:
+                    $ref: '#/components/examples/update/value'
+                  context:
+                    app:
+                      id: 1
+                      type: EUA
+                      name: EUA
+                      api:
+                        type: base
+                        url: >-
+                          https://n9rnowyxjd.execute-api.ap-south-1.amazonaws.com/stage/gw
+                        version: v1
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                properties:
+                  ack:
+                    type: boolean
+              examples:
+                default:
+                  value:
+                    ack: true
+  /track/service:
+    get:
+      description: To get the status for a service request.
+      summary: ''
+      tags:
+        - HSP API
+      parameters:
+        - name: signature
+          in: header
+          schema:
+            $ref: '#/components/headers/signature'
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+        - name: id
+          in: query
+          schema:
+            type: string
+          examples:
+            default:
+              value: '123'
+        - name: type
+          in: query
+          schema:
+            type: string
+          examples:
+            default:
+              value: consultation
+        - name: include_history
+          in: query
+          schema:
+            type: boolean
+          examples:
+            default:
+              value: 'true'
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      consultation:
+                        $ref: '#/components/schemas/consultation_service'
+                      history:
+                        type: array
+                        items:
+                          type: object
+                  context:
+                    type: object
+              examples:
+                default:
+                  $ref: '#/components/examples/track'
+  '/doctors/{doctor_id}':
+    get:
+      description: To get the details of a doctor.
+      summary: ''
+      tags:
+        - HSP API
+      parameters:
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+          examples:
+            default:
+              value: '123'
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/doctor'
+  /doctors/availability:
+    get:
+      description: To get the details of a doctor.
+      summary: ''
+      tags:
+        - HSP API
+      parameters:
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+        - name: doctor_id
+          in: path
+          required: true
+          schema:
+            type: string
+          examples:
+            default:
+              value: '123'
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/doctor'
+components:
+  schemas:
+    error_response:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/error'
+    error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+    service_search_request:
+      type: object
+      properties:
+        message:
+          type: object
+          required:
+            - type
+            - intent
+          properties:
+            type:
+              $ref: '#/components/schemas/service_type'
+            intent:
+              $ref: '#/components/schemas/consultation_intent'
+        context:
+          type: object
+          properties:
+            app:
+              $ref: '#/components/schemas/app'
+    service_search_response:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/consultation_service'
+    app:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 1
+        type:
+          type: string
+          enum:
+            - EUA
+            - HSP
+          example: HSP
+        api:
+          type: object
+          properties:
+            type:
+              type: string
+              example: base
+            url:
+              type: string
+              example: 'https://service-endpoint.hsp.org/'
+    consultation_intent:
+      type: object
+      required:
+        - speciality
+      properties:
+        order_by:
+          type: object
+          description: |
+            The expected sort order of the search response.
+          properties:
+            property:
+              type: string
+              description: >
+                The parameter based on which the results should be sorted.
+
+                The HSPs and the Gateway should map these parameters to
+                respective fields in the response.
+              enum:
+                - availability
+                - price
+                - experience
+              example: availability
+            order:
+              type: string
+              description: Order of the sort.
+              enum:
+                - asc
+                - desc
+              example: asc
+        speciality:
+          $ref: '#/components/schemas/speciality'
+        type:
+          $ref: '#/components/schemas/consultation_type'
+        location:
+          $ref: '#/components/schemas/location'
+        languages:
+          type: array
+          description: >-
+            The list of acceptable languages in which the patient wants to
+            consult with the doctor.
+          items:
+            type: string
+            enum:
+              - english
+              - hindi
+              - telugu
+              - gujarati
+              - kannada
+            example: english
+        availability:
+          type: object
+          description: The time range in which the patient is looking to consult a doctor.
+          properties:
+            min:
+              type: string
+              format: date-time
+              example: '2020-10-20T02:31:33.085Z'
+            max:
+              type: string
+              format: date-time
+              example: '2020-10-21T02:31:33.085Z'
+        gender:
+          type: string
+          description: The preferred gender of the doctor.
+          enum:
+            - male
+            - female
+          example: male
+        price_range:
+          type: object
+          description: The price range which the patient is looking for.
+          properties:
+            min:
+              type: number
+              example: 99
+            max:
+              type: number
+              example: 499
+            currency:
+              type: string
+              enum:
+                - INR
+              example: INR
+        preferred_channels:
+          type: array
+          description: >-
+            preferred channels for consultation based on patient's preference or
+            supported on the platform.
+          items:
+            $ref: '#/components/schemas/channel'
+        fulfillment_schedule_type:
+          type: string
+          description: >
+            Fulfillment flow of the consultation.
+
+            It allows the user to either go for a consultation as soon as
+            possible, or,
+
+            to consult at a specific time by scheduling a consultation.
+          enum:
+            - asap
+            - scheduled
+          example: asap
+        clinical_summary:
+          $ref: '#/components/schemas/clinical_notes'
+        person:
+          $ref: '#/components/schemas/person'
+        patient:
+          description: >-
+            The patient could either be the owner of the account or any other
+            person that the owner of the account initiated a consultation for.
+          allOf:
+            - $ref: '#/components/schemas/person'
+            - type: object
+              properties:
+                relationship:
+                  type: string
+                  example: mother
+    consultation_type:
+      type: object
+      description: This describes the nature of the consultation being requested.
+      properties:
+        type:
+          type: string
+          description: Type of the consultation
+          enum:
+            - tele
+            - physical
+          example: tele
+        subtype:
+          type: string
+          description: Nature of the consultation that the patient is seeking.
+          enum:
+            - followup
+            - referral
+            - firstvisit
+            - second_opinion
+            - preliminary
+          example: firstvisit
+        assessmentFor:
+          type: string
+          description: >-
+            This field identifies if the consultation is for a specific flow,
+            such as, covid.
+          enum:
+            - covid
+            - general
+          example: covid
+    speciality:
+      type: string
+      description: The speciality of the doctor.
+      enum:
+        - physician
+        - pediatrician
+        - gynaecologist
+        - dermatologist
+        - dietitian
+        - orthopedician
+        - fertility_specialist
+        - cardiologist
+        - general_surgeon
+        - gastroenterologist
+        - pulmonologist
+        - oncologist
+        - neurosurgeon
+        - urologist
+        - nephrologist
+        - neurologist
+        - diabetologist
+        - endocrinologist
+        - cosmetologist
+        - andrologist
+        - psychiatrist
+        - dentist
+        - psychotherapist
+        - ent_specialist
+        - ophthalmologist
+        - rheumatologist
+        - physiotherapist
+      example: physician
+    channel:
+      type: object
+      properties:
+        name:
+          type: string
+          enum:
+            - chat
+            - video
+            - audio
+            - physical
+          example: audio
+    taxonomy_item:
+      type: object
+      properties:
+        taxonomy:
+          $ref: '#/components/schemas/taxonomy'
+        id:
+          type: string
+        taxonomy_id:
+          type: string
+        taxonomy_term:
+          type: string
+        name:
+          type: string
+        value:
+          type: object
+    taxonomy:
+      type: object
+      properties:
+        id:
+          type: string
+        uri:
+          type: string
+    clinical_notes:
+      type: object
+      description: >-
+        The summary of the patient's medical history, current problems and other
+        information.
+      properties:
+        chiefcomplaints:
+          type: array
+          items:
+            $ref: '#/components/schemas/taxonomy_item'
+          example:
+            - {}
+        medical_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/taxonomy_item'
+          example:
+            - {}
+        allergies:
+          type: array
+          items:
+            $ref: '#/components/schemas/taxonomy_item'
+          example:
+            - {}
+        previous_conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/taxonomy_item'
+          example:
+            - {}
+        other_info:
+          $ref: '#/components/schemas/object_map'
+    object_map:
+      description: 'http://schema.beckn.org/core/schema/0.7.1/tag.json'
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+    person:
+      description: The owner of the account from which the flow is initiated.
+      allOf:
+        - type: object
+          properties:
+            uhid:
+              type: string
+              example: user_0001
+            title:
+              type: string
+              example: Mr
+            first_name:
+              type: string
+              example: Raghava
+            last_name:
+              type: string
+              example: Deekshitula
+            contact:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: raghava@mfine.co
+                mobile:
+                  type: object
+                  properties:
+                    country_code:
+                      type: string
+                      example: '+91'
+                    number:
+                      type: string
+                      example: '9876543210'
+            age:
+              type: number
+              example: 26
+            gender:
+              type: string
+              enum:
+                - male
+                - female
+            is_active:
+              type: boolean
+              example: true
+            address:
+              $ref: '#/components/schemas/location'
+            last_gps_location:
+              $ref: '#/components/schemas/gps_location'
+    provider:
+      description: >-
+        Describes a provider. Taken from
+        https://schema.beckn.org/core/schema/0.7.1/provider.json
+      type: object
+      properties:
+        id:
+          type: string
+          example: provider_0001
+        name:
+          type: string
+          example: open-hsp
+        logo:
+          type: string
+          example: 'https://hsp-url.com/logo.png'
+        website:
+          type: string
+          format: url
+          example: hsp-url.com
+        contact:
+          type: object
+          properties:
+            email:
+              type: string
+            mobile:
+              type: object
+              properties:
+                country_code:
+                  type: string
+                number:
+                  type: string
+        api:
+          $ref: '#/components/schemas/api'
+    api:
+      description: 'https://schema.beckn.org/core/schema/0.7.1/api.json'
+      type: object
+      properties:
+        url:
+          type: string
+          example: 'https://provider-stage.com/api/v1'''
+        type:
+          type: string
+          enum:
+            - base
+          example: base
+    location:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - point
+            - address
+            - city
+          example: city
+        value:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/gps_location'
+          example: Hyderabad
+    gps_location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          example: 17.385044
+        longitude:
+          type: number
+          example: 78.486671
+    service_type:
+      type: string
+      description: This identifies the type of the service.
+      enum:
+        - consultation
+        - diagnostic_test
+        - medicine_delivery
+      example: consultation
+    doctor:
+      allOf:
+        - type: object
+          properties:
+            doctorid:
+              type: string
+              example: doctor_123
+            license_number:
+              type: string
+              example: KMC0001
+            experience:
+              type: string
+              format: date-time
+              example: '2000-10-20T02:31:33.085Z'
+            image:
+              type: string
+              example: 'https://hsp-endpoint.org/images/doctor_123.png'
+            about:
+              type: string
+              example: about doctor.
+            signature:
+              type: string
+              example: 'https://hsp-endpoint.org/signatures/doctor_123.png'
+            is_active:
+              type: boolean
+              example: true
+            qualifications:
+              type: string
+              example: 'MBBS, MD'
+            speciality:
+              $ref: '#/components/schemas/speciality'
+            reviews:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    example: Consulted for Cough
+                  description:
+                    type: string
+                    example: The doctor was good.
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - cough
+                      - positive
+                  reviewer:
+                    type: string
+                    example: Mr Raghava
+                  rating:
+                    $ref: '#/components/schemas/rating'
+            languages:
+              type: array
+              items:
+                type: string
+                example: english
+            supported_channels:
+              type: array
+              items:
+                $ref: '#/components/schemas/channel'
+            rating:
+              $ref: '#/components/schemas/rating'
+            item:
+              $ref: '#/components/schemas/item'
+            provider:
+              $ref: '#/components/schemas/provider'
+            slot_duration:
+              type: number
+              example: 20
+              description: The duration of the consultation with the doctor.
+            availability:
+              type: object
+              properties:
+                slots:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                          - FREE
+                          - BUSY
+                        example: FREE
+                      slot:
+                        type: string
+                        format: date-time
+                        example: '2020-10-20T02:31:33.085Z'
+            hospitals:
+              type: array
+              items:
+                $ref: '#/components/schemas/hospital'
+        - type: object
+          properties:
+            name:
+              type: string
+              example: Dr John
+            contact:
+              type: object
+              properties:
+                email:
+                  type: string
+                mobile:
+                  type: object
+                  properties:
+                    country_code:
+                      type: string
+                    number:
+                      type: string
+            age:
+              type: number
+              example: 40
+            gender:
+              type: string
+              enum:
+                - male
+                - female
+            is_active:
+              type: boolean
+              example: true
+    rating:
+      description: 'http://schema.beckn.org/core/schema/0.7.1/rating.json'
+      type: object
+      properties:
+        value:
+          type: string
+          example: 1
+        scale:
+          type: array
+          items:
+            type: string
+          example:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+    consultation_service:
+      type: object
+      properties:
+        speciality:
+          $ref: '#/components/schemas/speciality'
+        payments:
+          type: array
+          items:
+            type: object
+            required:
+              - payment_id
+              - payment_gateway
+              - amount
+              - time
+            properties:
+              payment_id:
+                type: string
+                example: payment_001
+              payment_gateway:
+                type: string
+                example: razorpay
+              amount:
+                type: number
+                example: 499
+              time:
+                type: string
+                format: date-time
+                example: '2020-10-20T01:37:08.932444Z'
+        consultation:
+          $ref: '#/components/schemas/consultation'
+        fulfillment_schedule_type:
+          type: string
+          enum:
+            - asap
+            - scheduled
+          example: scheduled
+    time:
+      type: string
+      format: date-time
+      example: '2020-10-20T01:37:08.932444Z'
+    consultation:
+      type: object
+      required:
+        - consult_time
+        - id
+      properties:
+        id:
+          type: string
+          example: consult_uuid
+        doctor:
+          $ref: '#/components/schemas/doctor'
+        status:
+          type: string
+          enum:
+            - new
+            - confirmed
+            - completed
+            - rejected
+          example: new
+        assign_at:
+          $ref: '#/components/schemas/time'
+        consult_time:
+          $ref: '#/components/schemas/time'
+        consult_duration_promise:
+          type: number
+          example: 20
+        consult_url:
+          type: string
+          example: 'https://hsp-endpoint.org/consult/consult_uuid'
+        type:
+          $ref: '#/components/schemas/consultation_type'
+        preferred_channel:
+          $ref: '#/components/schemas/channel'
+        supported_channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/channel'
+        languages:
+          type: array
+          items:
+            type: string
+          example:
+            - english
+            - hindi
+        summary:
+          $ref: '#/components/schemas/consultation_summary'
+    consultation_summary:
+      description: Summraizes the outcome of a consultation
+      type: object
+      properties:
+        consultation:
+          $ref: '#/components/schemas/consultation/properties/id'
+        summary:
+          type: object
+          properties:
+            duration:
+              type: number
+              example: 20
+            prescription_url:
+              type: string
+              example: 'https://hsp-endpoint.org/consult/consult_uuid/prescription'
+            prescription:
+              $ref: '#/components/schemas/prescription'
+    hospital:
+      type: object
+      properties:
+        name:
+          type: string
+          example: KIMS Hospitals
+        id:
+          type: string
+          example: hospital_0001
+        logo:
+          type: string
+          example: 'https://kims-endpoint.org/images/logo.png'
+        address:
+          $ref: '#/components/schemas/location'
+    prescription:
+      type: object
+      properties:
+        clinical_notes:
+          $ref: '#/components/schemas/clinical_notes'
+        diagnosis:
+          type: array
+          items:
+            $ref: '#/components/schemas/taxonomy_item'
+        medicines:
+          type: array
+          items:
+            type: object
+            properties:
+              medication:
+                $ref: '#/components/schemas/taxonomy_item'
+              for:
+                type: array
+                items:
+                  type: string
+              regimen:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    regimen:
+                      type: string
+                    start:
+                      type: string
+                      format: date-time
+                    duration:
+                      type: number
+        diagnostictests:
+          type: array
+          items:
+            type: object
+            properties:
+              test:
+                $ref: '#/components/schemas/taxonomy_item'
+              additional_info:
+                type: string
+        general_advice:
+          type: object
+        followup:
+          type: string
+          format: date-time
+        referral:
+          type: object
+          properties:
+            referto_speciality:
+              type: string
+            notes:
+              type: string
+    item:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item_001
+        name:
+          type: string
+          example: consultation
+        description:
+          type: string
+          example: this is an online consultation
+        image:
+          type: string
+        price:
+          type: number
+          example: 299
+    service_change:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - info
+            - request
+          example: request
+        change_type:
+          type: string
+          enum:
+            - reschedule
+            - cancel
+            - complete
+            - update
+            - missed
+            - rescheduled
+            - cancelled
+            - completed
+            - updated
+            - patient_updated
+            - doctor_updated
+            - call_initiated
+          example: reschedule
+        change_reason:
+          type: object
+          properties:
+            reason:
+              type: string
+              example: availability of doctor changed
+            additional_info:
+              type: string
+        changed_properties:
+          type: array
+          items:
+            type: string
+          example:
+            - consult_time
+  parameters: {}
+  securitySchemes: {}
+  requestBodies: {}
+  responses: {}
+  headers:
+    authtoken:
+      schema:
+        type: string
+    signature:
+      schema:
+        type: string
+    callbackurl:
+      schema:
+        type: string
+    caller:
+      schema:
+        type: string
+        enum:
+          - provider
+          - app
+          - gateway
+    id:
+      schema:
+        type: string
+  examples:
+    covid_consult_search_request:
+      value:
+        message:
+          type: consultation
+          intent:
+            speciality: physician
+            type:
+              type: tele
+              subtype: firstvisit
+              assessmentFor: covid
+            languages:
+              - english
+            preferred_channels:
+              - name: audio
+            fulfillment_schedule_type: asap
+            clinical_summary:
+              other_info:
+                label: string
+                value: string
+            person:
+              uhid: user_0001
+              title: Mr
+              first_name: Raghava
+              last_name: Deekshitula
+              contact:
+                email: raghava@mfine.co
+                mobile:
+                  country_code: '+91'
+                  number: '9876543210'
+              age: 26
+              gender: Male
+              is_active: true
+              address:
+                type: city
+                value: Hyderabad
+              last_gps_location:
+                latitude: 17.385044
+                longitude: 78.486671
+            patient:
+              uhid: user_0001
+              title: Mr
+              first_name: Raghava
+              last_name: Deekshitula
+              contact:
+                email: raghava@mfine.co
+                mobile:
+                  country_code: '+91'
+                  number: '9876543210'
+              age: 26
+              gender: Male
+              is_active: true
+              address:
+                type: city
+                value: Hyderabad
+              last_gps_location:
+                latitude: 17.385044
+                longitude: 78.486671
+              relationship: mother
+        context:
+          app:
+            id: 1
+            type: HSP
+            api:
+              type: base
+              url: 'https://service-endpoint.hsp.org/'
+    covid_consult_search_response:
+      value:
+        services:
+          - speciality: physician
+            consultation:
+              status: NEW
+              type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: covid
+              assign_at: '2020-10-20T01:37:08.932444Z'
+              consult_time: '2020-10-20T01:37:08.932444Z'
+              consult_duration_promise: 20
+              consult_url: 'https://hsp-endpoint.org/consult/consult_uuid'
+              preferred_channel:
+                name: audio
+              supported_channels:
+                - name: audio
+              languages:
+                - english
+                - hindi
+              fulfillment_schedule_type: asap
+    scheduled_consult_search_request:
+      value:
+        message:
+          type: consultation
+          intent:
+            order_by:
+              property: availability
+              order: asc
+            speciality: physician
+            type:
+              type: tele
+              subtype: firstvisit
+              assessmentFor: general
+            location:
+              type: city
+              value: Hyderabad
+            languages:
+              - english
+            availability:
+              min: '2020-10-20T02:31:33.085Z'
+              max: '2020-10-21T02:31:33.085Z'
+            gender: male
+            price_range:
+              min: 99
+              max: 499
+              currency: INR
+            preferred_channels:
+              - name: audio
+            fulfillment_schedule_type: scheduled
+            clinical_summary:
+              other_info:
+                label: string
+                value: string
+            person:
+              uhid: user_0001
+              title: Mr
+              first_name: Raghava
+              last_name: Deekshitula
+              contact:
+                email: raghava@mfine.co
+                mobile:
+                  country_code: '+91'
+                  number: '9876543210'
+              age: 26
+              gender: Male
+              is_active: true
+              address:
+                type: city
+                value: Hyderabad
+              last_gps_location:
+                latitude: 17.385044
+                longitude: 78.486671
+            patient:
+              uhid: user_0001
+              title: Mr
+              first_name: Raghava
+              last_name: Deekshitula
+              contact:
+                email: raghava@mfine.co
+                mobile:
+                  country_code: '+91'
+                  number: '9876543210'
+              age: 26
+              gender: Male
+              is_active: true
+              address:
+                type: city
+                value: Hyderabad
+              last_gps_location:
+                latitude: 17.385044
+                longitude: 78.486671
+              relationship: mother
+        context:
+          app:
+            id: 1
+            type: HSP
+            api:
+              type: base
+              url: 'https://service-endpoint.hsp.org/'
+    scheduled_consult_search_response:
+      value:
+        services:
+          - speciality: physician
+            payments:
+              - payment_id: payment_001
+                payment_gateway: razorpay
+                amount: 499
+                time: '2020-10-20T01:37:08.932444Z'
+            consultation:
+              id: consult_uuid
+              doctor:
+                doctorid: doctor_123
+                license_number: KMC0001
+                experience: '2000-10-20T02:31:33.085Z'
+                image: 'https://hsp-endpoint.org/images/doctor_123.png'
+                about: about doctor.
+                signature: 'https://hsp-endpoint.org/signatures/doctor_123.png'
+                is_active: true
+                qualifications: 'MBBS, MD'
+                speciality: physician
+                reviews:
+                  - title: Consulted for Cough
+                    description: The doctor was good.
+                    tags:
+                      - cough
+                      - positive
+                    reviewer: Mr Raghava
+                    rating:
+                      value: 1
+                      scale:
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                languages:
+                  - english
+                supported_channels:
+                  - name: audio
+                rating:
+                  value: 1
+                  scale:
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                    - 5
+                item:
+                  id: item_001
+                  name: consultation
+                  description: this is an online consultation
+                  image: string
+                  price: 299
+                provider:
+                  id: provider_0001
+                  name: open-hsp
+                  logo: 'https://hsp-url.com/logo.png'
+                  website: hsp-url.com
+                  contact:
+                    email: string
+                    mobile:
+                      country_code: string
+                      number: string
+                  api:
+                    url: 'https://provider-stage.com/api/v1'''
+                    type: base
+                slot_duration: 20
+                availability:
+                  slots:
+                    - type: FREE
+                      slot: '2020-10-20T02:31:33.085Z'
+                hospitals:
+                  - name: KIMS Hospitals
+                    id: hospital_0001
+                    logo: 'https://kims-endpoint.org/images/logo.png'
+                    address:
+                      type: city
+                      value: Hyderabad
+                name: Dr John
+                contact:
+                  email: string
+                  mobile:
+                    country_code: string
+                    number: string
+                age: 40
+                gender: Male
+              status: NEW
+              type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: covid
+              assign_at: '2020-10-20T01:37:08.932444Z'
+              consult_time: '2020-10-20T01:37:08.932444Z'
+              consult_duration_promise: 20
+              consult_url: 'https://hsp-endpoint.org/consult/consult_uuid'
+              preferred_channel:
+                name: audio
+              supported_channels:
+                - name: audio
+              languages:
+                - english
+                - hindi
+              fulfillment_schedule_type: scheduled
+    consult_confirm_request:
+      value:
+        message:
+          service:
+            speciality: physician
+            payments:
+              - payment_id: payment_001
+                payment_gateway: razorpay
+                amount: 499
+                time: '2020-10-20T01:37:08.932444Z'
+            consultation:
+              doctor:
+                doctorid: doctor_123
+              status: NEW
+              type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: general
+              assign_at: '2020-10-20T01:37:08.932444Z'
+              consult_time: '2020-10-20T01:37:08.932444Z'
+              consult_duration_promise: 20
+              consult_url: 'https://hsp-endpoint.org/consult/consult_uuid'
+              preferred_channel:
+                name: audio
+              supported_channels:
+                - name: audio
+              languages:
+                - english
+                - hindi
+            fulfillment_schedule_type: scheduled
+          person:
+            uhid: user_0001
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            contact:
+              email: raghava@mfine.co
+              mobile:
+                country_code: '+91'
+                number: '9876543210'
+            age: 26
+            gender: Male
+            is_active: true
+            address:
+              type: city
+              value: Hyderabad
+            last_gps_location:
+              latitude: 17.385044
+              longitude: 78.486671
+          patient:
+            uhid: user_0001
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            contact:
+              email: raghava@mfine.co
+              mobile:
+                country_code: '+91'
+                number: '9876543210'
+            age: 26
+            gender: Male
+            is_active: true
+            address:
+              type: city
+              value: Hyderabad
+            last_gps_location:
+              latitude: 17.385044
+              longitude: 78.486671
+            relationship: string
+            clinical_notes:
+              chiefcomplaints:
+                - {}
+              medical_history:
+                - {}
+              allergies:
+                - {}
+              previous_conditions:
+                - {}
+              other_info:
+                label: string
+                value: string
+        context:
+          app:
+            id: string
+            type: string
+            name: string
+            api:
+              type: string
+              url: string
+    scheduled_consult_confirm_response:
+      value:
+        consultation_service:
+          speciality: physician
+          consultation:
+            id: consult_uuid
+            doctor:
+              doctorid: doctor_123
+            status: NEW
+            type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: covid
+            assign_at: '2020-10-20T01:37:08.932444Z'
+            consult_time: '2020-10-20T01:37:08.932444Z'
+            consult_duration_promise: 20
+            consult_url: 'https://hsp-endpoint.org/consult/consult_uuid'
+            preferred_channel:
+              name: audio
+            supported_channels:
+              - name: audio
+            languages:
+              - english
+              - hindi
+          fulfillment_schedule_type: scheduled
+    consultation_service:
+      value:
+        consultation_service:
+          speciality: physician
+          consultation:
+            id: 1e77a4a9-ceac-4dbb-bc7f-8e241e84fcfb
+            type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: covid
+            doctor:
+              doctorid: '123'
+              signature: ''
+              is_active: true
+              qualifications: 'MBBS, DGO'
+              supported_channels:
+                - id: 0
+                  name: phone
+              rating:
+                value: '4'
+                scale:
+                  - '5'
+              item:
+                id: '001'
+                name: consultation
+                price: 199
+                tags:
+                  - consultation
+              name: Dr. John Doe
+              contact:
+                email: john.doe@mfine.co
+                mobile:
+                  country_code: '91'
+                  number: '9940599135'
+              age: 35
+              gender: Male
+              status: NEW
+            supported_channels:
+              - id: 0
+                name: phone
+            languages:
+              - english
+            assign_at: '2020-07-20T15:49:04-07:00'
+            consult_time: '2020-07-20T15:49:04-07:00'
+            consult_duration_promise: 30
+            consult_url: ''
+          patient:
+            title: Mr
+            first_name: Sowjanya
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: female
+            relationship: wife
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          person:
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: male
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          fulfillment_schedule_type: asap
+    update:
+      value:
+        consultation_service:
+          speciality: physician
+          consultation:
+            doctor:
+              doctorid: '123'
+              signature: ''
+              is_active: true
+              qualifications: 'MBBS, DGO'
+              supported_channels:
+                - id: 0
+                  name: phone
+              rating:
+                value: '4'
+                scale:
+                  - '5'
+              item:
+                id: '001'
+                name: consultation
+                price: 199
+                tags:
+                  - consultation
+              name: Dr. John Doe
+              contact:
+                email: john.doe@mfine.co
+                mobile:
+                  country_code: '91'
+                  number: '9940599135'
+              age: 35
+              gender: Male
+              status: NEW
+            supported_channels:
+              - id: 0
+                name: phone
+            languages:
+              - english
+            type:
+                type: tele
+                subtype: firstvisit
+                assessmentFor: covid
+            assign_at: '2020-07-20T15:49:04-07:00'
+            consult_time: '2020-07-20T15:49:04-07:00'
+            consult_duration_promise: 30
+            consult_url: ''
+          patient:
+            title: Mr
+            first_name: Sowjanya
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: female
+            relationship: wife
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          person:
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: male
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          fulfillment_schedule_type: asap
+        service_change: {}
+    track:
+      value:
+        message:
+          consultation_service:
+            $ref: >-
+              #/components/examples/consultation_service/value/consultation_service
+          history:
+            - $ref: >-
+                #/components/examples/consultation_service/value/consultation_service
+        context: {}
+  links: {}
+  callbacks:
+    headers: {}
+    responses: {}

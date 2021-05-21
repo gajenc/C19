@@ -1,0 +1,856 @@
+openapi: 3.0.0
+info:
+  description: |
+    This is the API documentation for health gateway.
+  version: 0.0.2
+  title: Health Gateway API Specification
+  termsOfService: ''
+  contact:
+    email: raghava@mfine.co
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+servers:
+  - description: The staging URL of the telemedicine gateway.
+    url: 'http://healthgateway-stage-1416917905.ap-south-1.elb.amazonaws.com/api/v1'
+paths:
+  /on_update/service:
+    post:
+      description: To confirm the provider for a service request.
+      summary: ''
+      tags:
+        - EUA API
+      parameters:
+        - name: signature
+          in: header
+          schema:
+            $ref: '#/components/headers/signature'
+        - name: apitoken
+          in: header
+          schema:
+            $ref: '#/components/headers/authtoken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                message:
+                  type: object
+                  properties:
+                    consultation_service:
+                      $ref: '#/components/schemas/consultation_service'
+                    service_change:
+                      $ref: '#/components/schemas/service_change'
+                context:
+                  type: object
+                  properties: {}
+            examples:
+              default:
+                value:
+                  message:
+                    $ref: '#/components/examples/update/value'
+                  context:
+                    app:
+                      id: 1
+                      type: EUA
+                      name: EUA
+                      api:
+                        type: base
+                        url: 'https://n9rnowyxjd.execute-api.ap-south-1.amazonaws.com/stage/gw'
+                        version: v1
+      responses:
+        '200':
+          description: Returns a success
+          content:
+            application/json:
+              schema:
+                properties:
+                  ack:
+                    type: boolean
+              examples:
+                default:
+                  value:
+                    ack: true
+components:
+  schemas:
+    consultation_intent:
+      type: object
+      required:
+        - speciality
+        - time_range
+      properties:
+        speciality:
+          type: string
+        type:
+          $ref: '#/components/schemas/consultation_type'
+        languages:
+          type: array
+          items:
+            type: string
+        preferred_channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/channel'
+        fulfillment_schedule_type:
+          type: string
+          enum:
+            - asap
+            - scheduled
+        clinical_summary:
+          $ref: '#/components/schemas/clinical_notes'
+        person:
+          $ref: '#/components/schemas/person'
+        patient:
+          allOf:
+            - $ref: '#/components/schemas/person'
+            - $ref: '#/components/schemas/clinical_notes'
+            - type: object
+              properties:
+                relationship:
+                  type: string
+    consultation_type:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - tele
+            - physical
+        subtype:
+          type: string
+          enum:
+            - followup
+            - referral
+            - firstvisit
+            - second_opinion
+            - preliminary
+    channel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          enum:
+            - phone
+            - chat
+            - video
+            - audio
+            - physical
+    taxonomy_item:
+      type: object
+      properties:
+        taxonomy:
+          $ref: '#/components/schemas/taxonomy'
+        id:
+          type: string
+        taxonomy_id:
+          type: string
+        taxonomy_term:
+          type: string
+        name:
+          type: string
+        value:
+          type: object
+    taxonomy:
+      type: object
+      properties:
+        id:
+          type: string
+        uri:
+          type: string
+    clinical_notes:
+      type: object
+      properties:
+        chiefcomplaints:
+          $ref: '#/components/schemas/taxonomy_item'
+        medical_history:
+          $ref: '#/components/schemas/taxonomy_item'
+        allergies:
+          $ref: '#/components/schemas/taxonomy_item'
+        previous_conditions:
+          $ref: '#/components/schemas/taxonomy_item'
+        other_info:
+          $ref: '#/components/schemas/object_map'
+    object_map:
+      $ref: 'http://schema.beckn.org/core/schema/0.7.1/tag.json'
+    person:
+      allOf:
+        - type: object
+          properties:
+            uhid:
+              type: string
+            title:
+              type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            contact:
+              type: object
+              properties:
+                email:
+                  type: string
+                mobile:
+                  type: object
+                  properties:
+                    country_code:
+                      type: string
+                    number:
+                      type: string
+            age:
+              type: number
+            gender:
+              type: string
+              enum:
+                - Male
+                - Female
+            is_active:
+              type: boolean
+            address:
+              $ref: '#/components/schemas/location'
+            last_gps_location:
+              $ref: '#/components/schemas/gps_location'
+    provider:
+      description: 'Describes a provider. Taken from https://schema.beckn.org/core/schema/0.7.1/provider.json'
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        website:
+          type: string
+          format: url
+        contact:
+          type: object
+          properties:
+            email:
+              type: string
+            mobile:
+              type: object
+              properties:
+                country_code:
+                  type: string
+                number:
+                  type: string
+        api:
+          $ref: 'https://schema.beckn.org/core/schema/0.7.1/api.json'
+    location:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - point
+            - polygon
+            - circle
+            - address
+            - city
+            - country
+        point:
+          $ref: '#/components/schemas/gps_location'
+        polygon:
+          type: array
+          items:
+            $ref: '#/components/schemas/gps_location'
+        circle:
+          type: object
+          properties:
+            centre:
+              $ref: '#/components/schemas/gps_location'
+            radius:
+              type: number
+    gps_location:
+      type: object
+      properties:
+        lat:
+          type: number
+        long:
+          type: number
+    service_type:
+      type: string
+      enum:
+        - consultation
+        - diagnostic_test
+        - medicine_delivery
+    doctor:
+      allOf:
+        - type: object
+          properties:
+            doctorid:
+              type: string
+            signature:
+              type: string
+            is_active:
+              type: boolean
+            qualifications:
+              type: string
+            languages:
+              type: array
+              items:
+                type: string
+            supported_channels:
+              type: array
+              items:
+                $ref: '#/components/schemas/channel'
+            rating:
+              $ref: 'http://schema.beckn.org/core/schema/0.7.1/rating.json'
+            item:
+              $ref: '#/components/schemas/item'
+            provider:
+              $ref: '#/components/schemas/provider'
+        - type: object
+          properties:
+            name:
+              type: string
+            contact:
+              type: object
+              properties:
+                email:
+                  type: string
+                mobile:
+                  type: object
+                  properties:
+                    country_code:
+                      type: string
+                    number:
+                      type: string
+            age:
+              type: number
+            gender:
+              type: string
+              enum:
+                - Male
+                - Female
+            is_active:
+              type: boolean
+    consultation_service:
+      type: object
+      properties:
+        speciality:
+          type: string
+        consultation:
+          $ref: '#/components/schemas/consultation'
+        fulfillment_schedule_type:
+          type: string
+          enum:
+            - asap
+            - scheduled
+    time:
+      type: string
+      format: date-time
+    consultation:
+      type: object
+      required:
+        - consult_time
+        - id
+      properties:
+        id:
+          type: string
+        doctor:
+          $ref: '#/components/schemas/doctor'
+        status:
+          type: string
+          enum:
+            - new
+            - confirmed
+            - completed
+            - rejected
+        assign_at:
+          $ref: '#/components/schemas/time'
+        consult_time:
+          $ref: '#/components/schemas/time'
+        consult_duration_promise:
+          type: number
+        consult_url:
+          type: string
+        preferred_channel:
+          $ref: '#/components/schemas/channel'
+        supported_channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/channel'
+        languages:
+          type: array
+          items:
+            type: string
+        summary:
+          $ref: '#/components/schemas/consultation_summary'
+    consultation_summary:
+      description: Summraizes the outcome of a consultation
+      type: object
+      properties:
+        consultation:
+          $ref: '#/components/schemas/consultation/properties/id'
+        summary:
+          type: object
+          properties:
+            duration:
+              type: number
+            prescription_url:
+              type: string
+            prescription:
+              $ref: '#/components/schemas/prescription'
+    prescription:
+      type: object
+      properties:
+        clinical_notes:
+          $ref: '#/components/schemas/clinical_notes'
+        diagnosis:
+          type: array
+          items:
+            type: object
+            properties:
+              diagnosis:
+                $ref: '#/components/schemas/taxonomy_item'
+        medicines:
+          type: array
+          items:
+            type: object
+            properties:
+              medication:
+                $ref: '#/components/schemas/taxonomy_item'
+              for:
+                type: array
+                items:
+                  type: string
+              regimen:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    regimen:
+                      type: string
+                    start:
+                      $ref: 'https://schema.beckn.org/core/schema/0.7.1/time.json'
+                    duration:
+                      type: number
+        diagnostictests:
+          type: array
+          items:
+            type: object
+            properties:
+              test:
+                $ref: '#/components/schemas/taxonomy_item'
+              additional_info:
+                type: string
+        general_advice:
+          type: object
+        followup:
+          $ref: 'https://schema.beckn.org/core/schema/0.7.1/time.json'
+        referral:
+          type: object
+          properties:
+            referto_speciality:
+              type: string
+            notes:
+              type: string
+        doctor:
+          $ref: '#/components/schemas/doctor'
+    item:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        image:
+          $ref: 'https://schema.beckn.org/core/schema/0.7.1/image.json'
+        price:
+          type: number
+        quantity:
+          type: integer
+          minimum: 0
+        tags:
+          type: array
+          items:
+            type: string
+    service_change:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - info
+            - request
+        change_type:
+          type: string
+          enum:
+            - reschedule
+            - cancel
+            - complete
+            - update
+            - missed
+            - rescheduled
+            - cancelled
+            - completed
+            - updated
+            - patient_updated
+            - doctor_updated
+            - call_initiated
+        change_reason:
+          type: object
+          properties:
+            reason:
+              type: string
+            additional_info:
+              type: string
+        changed_properties:
+          type: array
+          items:
+            type: string
+  parameters: {}
+  securitySchemes: {}
+  requestBodies: {}
+  responses: {}
+  headers:
+    context:
+      $ref: 'http://schema.beckn.org/core/schema/0.7.1/context.json'
+    authtoken:
+      schema:
+        type: string
+    signature:
+      schema:
+        type: string
+    callbackurl:
+      schema:
+        type: string
+    caller:
+      schema:
+        type: string
+        enum:
+          - provider
+          - app
+          - gateway
+    id:
+      schema:
+        type: string
+  examples:
+    default_search:
+      value:
+        message:
+          type: consultation
+          intent:
+            speciality: physician
+            type:
+              type: tele
+              subtype: consultation
+            fulfillment_schedule_type: asap
+            languages:
+              - english
+              - hindi
+            person:
+              id: '1234'
+              title: Mr
+              first_name: Raghava
+              last_name: Deekshitula
+              dob: '1994-03-28'
+              gender: male
+              contact:
+                email: user@example.com
+                mobile:
+                  country_code: '91'
+                  number: '9940599135'
+              patient:
+                id: '1234'
+                title: Mr
+                first_name: Raghava
+                last_name: Deekshitula
+                dob: '1994-03-28'
+                gender: male
+                contact:
+                  email: user@example.com
+                  mobile:
+                    country_code: '91'
+                    number: '9940599135'
+                is_active: true
+          context:
+            app:
+              id: 1
+              type: EUA
+              name: EUA
+              api:
+                type: base
+                url: 'https://n9rnowyxjd.execute-api.ap-south-1.amazonaws.com/stage/gw'
+                version: v1
+    default_confirm:
+      value:
+        message:
+          service:
+            speciality: physician
+            consultation:
+              doctor:
+                doctorid: '123'
+                signature: ''
+                is_active: true
+                qualifications: 'MBBS, DGO'
+                supported_channels:
+                  - id: 0
+                    name: phone
+                rating:
+                  value: '4'
+                  scale:
+                    - '5'
+                item:
+                  id: '001'
+                  name: consultation
+                  price: 199
+                  tags:
+                    - consultation
+                name: Dr. John Doe
+                contact:
+                  email: john.doe@mfine.co
+                  mobile:
+                    country_code: '91'
+                    number: '9940599135'
+                age: 35
+                gender: Male
+                status: NEW
+              supported_channels:
+                - id: 0
+                  name: phone
+              languages:
+                - english
+              assign_at: '2015-07-20T15:49:04-07:00'
+              consult_time: '2015-07-20T15:49:04-07:00'
+              consult_duration_promise: 30
+              consult_url: ''
+            fulfillment_schedule_type: asap
+          patient:
+            title: Mr
+            first_name: Sowjanya
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: female
+            relationship: wife
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          person:
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: male
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+        context:
+          app:
+            id: 1
+            type: EUA
+            name: EUA
+            api:
+              type: base
+              url: 'https://n9rnowyxjd.execute-api.ap-south-1.amazonaws.com/stage/gw'
+              version: v1
+    search_response:
+      value:
+        services:
+          - speciality: physician
+            consultation:
+              doctor:
+                doctorid: '123'
+                signature: ''
+                is_active: true
+                qualifications: 'MBBS, DGO'
+                rating:
+                  value: '4'
+                  scale:
+                    - '5'
+                item:
+                  id: '001'
+                  name: consultation
+                  price: 199
+                  tags:
+                    - consultation
+                name: Dr. John Doe
+                contact:
+                  email: john.doe@mfine.co
+                  mobile:
+                    country_code: '91'
+                    number: '9940599135'
+                age: 35
+                gender: Male
+              languages:
+                - english
+              supported_channels:
+                - id: 0
+                  name: phone
+              assign_at: '2015-07-20T15:49:04-07:00'
+              consult_time: '2015-07-20T15:49:04-07:00'
+              consult_duration_promise: 30
+              consult_url: ''
+            provider:
+              id: 1
+              type: HSP
+              name: Open HSP
+              api:
+                type: base
+                url: 'https://n9rnowyxjd.execute-api.ap-south-1.amazonaws.com/stage/gw'
+                version: v1
+            fulfillment_schedule_type: asap
+    consultation_service:
+      value:
+        consultation_service:
+          speciality: physician
+          consultation:
+            id: 1e77a4a9-ceac-4dbb-bc7f-8e241e84fcfb
+            doctor:
+              doctorid: '123'
+              signature: ''
+              is_active: true
+              qualifications: 'MBBS, DGO'
+              supported_channels:
+                - id: 0
+                  name: phone
+              rating:
+                value: '4'
+                scale:
+                  - '5'
+              item:
+                id: '001'
+                name: consultation
+                price: 199
+                tags:
+                  - consultation
+              name: Dr. John Doe
+              contact:
+                email: john.doe@mfine.co
+                mobile:
+                  country_code: '91'
+                  number: '9940599135'
+              age: 35
+              gender: Male
+              status: NEW
+            supported_channels:
+              - id: 0
+                name: phone
+            languages:
+              - english
+            assign_at: '2015-07-20T15:49:04-07:00'
+            consult_time: '2015-07-20T15:49:04-07:00'
+            consult_duration_promise: 30
+            consult_url: ''
+          patient:
+            title: Mr
+            first_name: Sowjanya
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: female
+            relationship: wife
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          person:
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: male
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          fulfillment_schedule_type: asap
+    update:
+      value:
+        consultation_service:
+          speciality: physician
+          consultation:
+            doctor:
+              doctorid: '123'
+              signature: ''
+              is_active: true
+              qualifications: 'MBBS, DGO'
+              supported_channels:
+                - id: 0
+                  name: phone
+              rating:
+                value: '4'
+                scale:
+                  - '5'
+              item:
+                id: '001'
+                name: consultation
+                price: 199
+                tags:
+                  - consultation
+              name: Dr. John Doe
+              contact:
+                email: john.doe@mfine.co
+                mobile:
+                  country_code: '91'
+                  number: '9940599135'
+              age: 35
+              gender: Male
+              status: NEW
+            supported_channels:
+              - id: 0
+                name: phone
+            languages:
+              - english
+            assign_at: '2015-07-20T15:49:04-07:00'
+            consult_time: '2015-07-20T15:49:04-07:00'
+            consult_duration_promise: 30
+            consult_url: ''
+          patient:
+            title: Mr
+            first_name: Sowjanya
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: female
+            relationship: wife
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          person:
+            title: Mr
+            first_name: Raghava
+            last_name: Deekshitula
+            dob: '1994-03-28'
+            gender: male
+            contact:
+              email: user@example.com
+              mobile:
+                country_code: '91'
+                number: '9940599135'
+            uhid: '12345'
+            is_active: true
+          fulfillment_schedule_type: asap
+        service_change: {}
+    track:
+      value:
+        message:
+          consultation_service:
+            $ref: '#/components/examples/consultation_service/value/consultation_service'
+          history:
+            - $ref: '#/components/examples/consultation_service/value/consultation_service'
+        context: {}
+  links: {}
+  callbacks:
+    headers: {}
+    responses: {}

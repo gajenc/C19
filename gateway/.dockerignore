@@ -1,0 +1,10 @@
+.history
+build
+.vscode
+node_modules
+log
+configuration
+.eslintignore
+.eslintrc
+.gitignore
+CONTRIBUTING.md

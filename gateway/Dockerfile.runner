@@ -1,0 +1,8 @@
+FROM node:10.17.0-alpine
+
+RUN apk update && apk add --no-cache libstdc++ libgcc
+RUN mkdir /app/
+COPY app.bin /app/
+COPY ./wait-for.sh /
+
+CMD ["/app/app.bin"]
