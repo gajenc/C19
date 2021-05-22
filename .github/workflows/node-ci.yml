@@ -30,12 +30,14 @@ jobs:
         uses: actions/docker/cli@master
         with:
           args: build -t Swasth-Digital-Health-Foundation/C19CareAssist .
-      - name: docker login
-        uses: actions/docker/login@master
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}          
       - name: docker push
         uses: actions/docker/cli@master
         with:
-          args: push Swasth-Digital-Health-Foundation/C19CareAssist
+          push: true
+          tags: docker.pkg.github.com/${{ github.repository }}/XState-chatbot:${{ github.ref }}-${{ github.sha }}
