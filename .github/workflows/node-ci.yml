@@ -1,11 +1,11 @@
 name: npm build, lint, test and publish
 on:
   push:
-    branches: [ test ]
+    branches: [ main ]
     paths:
     - XState-Chatbot/**
   pull_request:
-    branches: [ test ]
+    branches: [ main ]
     paths:
     - XState-Chatbot/**  
 jobs:
