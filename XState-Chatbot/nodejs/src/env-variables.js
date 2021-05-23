@@ -7,9 +7,12 @@ const envVariables = {
     port: process.env.SERVICE_PORT || 8080,
     contextPath: process.env.CONTEXT_PATH || '/xstate-chatbot',
 
+    staticMediaPath: process.env.STATIC_MEDIA_PATH || 'resources/assets/static-media',
+    dynamicMediaPath: process.env.DYNAMIC_MEDIA_PATH || 'resources/assets/dynamic-media',
+
     whatsAppProvider: process.env.WHATSAPP_PROVIDER || 'console',
 
-    serviceProvider: process.env.SERVICE_PROVIDER || 'swasth',
+    serviceProvider: process.env.SERVICE_PROVIDER || 'Dummy',
 
     repoProvider: process.env.REPO_PROVIDER || 'InMemory',
 
@@ -17,7 +20,7 @@ const envVariables = {
 
     rootTenantId: process.env.ROOT_TENANTID || 'in',
 
-    supportedLocales: process.env.SUPPORTED_LOCALES || 'en_IN,hi_IN',
+    supportedLocales: process.env.SUPPORTED_LOCALES || 'en_IN,hi_IN',       // Unused
 
     dateFormat: process.env.DATEFORMAT || 'DD/MM/YYYY',
     timeZone: process.env.TIMEZONE || 'Asia/Kolkata',
@@ -51,7 +54,7 @@ const envVariables = {
         apikey: process.env.KALEYRA_API_KEY || '',
     },
 
-    kafka: {
+    kafka: {                                                                // Unused
         kafkaBootstrapServer: process.env.KAFKA_BOOTSTRAP_SERVER || 'localhost:9092',
         chatbotTelemetryTopic: process.env.CHATBOT_TELEMETRY_TOPIC || 'chatbot-telemetry-v2',
 

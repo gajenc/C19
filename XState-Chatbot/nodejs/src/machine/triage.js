@@ -1,7 +1,9 @@
 const { assign } = require('xstate');
 const dialog = require('./util/dialog.js');
+const mediaUtil = require('./util/media');
 const { personService, triageService } = require('./service/service-loader');
 const { messages, grammers } = require('./messages/triage');
+const config = require('../../src/env-variables');
 
 const triageFlow = {
   id: 'triageFlow',
@@ -24,30 +26,38 @@ const triageFlow = {
           }
         },
         process: {
-          onEntry: assign((context, event) => {
-            let message = dialog.get_input(event, false);
-            if (event.message.type == 'text' && message.length < 100 && /^[ A-Za-z]+$/.test(message.trim())) {
-              context.slots.triage.person.first_name = message
-              context.validMessage = true;
-            } else {
-              context.validMessage = false;
-            }
-          }),
-          always: [
-            {
-              cond: (context) => context.validMessage,
-              target: '#personAge'
-            },
-            {
-              target: 'error'
-            }
-          ]
+          invoke: {
+            src: (context, event) => personService.validateName(context, event),
+            onDone: [
+              {
+                cond: (context, event) => event.data == 'invalid',
+                actions: assign((context, event) => {
+                  dialog.sendMessage(context, dialog.get_message(messages.personName.error, context.user.locale));
+                }),
+                target: 'waitForUserInput'
+              },
+              {
+                cond: (context, event) => event.data == 'duplicate',
+                actions: assign((context, event) => {
+                  dialog.sendMessage(context, dialog.get_message(messages.personName.duplicateError, context.user.locale));
+                }),
+                target: 'waitForUserInput'
+              },
+              {
+                cond: (context, event) => event.data,
+                actions: assign((context, event) => {
+                  context.slots.triage.person.first_name = event.data;
+                }),
+                target: '#personAge'
+              },
+            ]
+          },
+          // 2
         },
-        error: {
-          onEntry: assign((context, event) => {
-            dialog.sendMessage(context, dialog.get_message(messages.personName.error, context.user.locale), false);
-          }),
-          always: 'prompt'
+        waitForUserInput: {
+          on: {
+            USER_MESSAGE: 'process'
+          }
         }
       }
     }, // personName
@@ -112,7 +122,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -166,7 +176,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -176,6 +186,7 @@ const triageFlow = {
             {
               cond: (context) => context.intention === true,
               actions: assign((context, event) => {
+                  context.slots.triage.symptoms = context.intention
                   let message = dialog.get_message(messages.endFlow.specialSymptomsEnd, context.user.locale);
                   message = message.replace('{{name}}', context.slots.triage.person.first_name);
                   dialog.sendMessage(context, message);
@@ -184,7 +195,7 @@ const triageFlow = {
             },
             {
               cond: (context) => context.intention === false,
-              target: '#symptoms'
+              target: '#triageSpo2'
             }
           ]
         },
@@ -214,7 +225,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -252,7 +263,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -319,7 +330,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -358,16 +369,22 @@ const triageFlow = {
       }),
       always: [
         {
+          cond: (context) => (context.slots.triage.symptoms || context.slots.triage.rtpcr == 'positive'),
+          target: '#subscribe'
+        },
+        {
           cond: (context) => context.slots.triage.conclusion,
           actions: assign((context, event) => {
             let message = dialog.get_message(messages.endFlow[context.slots.triage.conclusion], context.user.locale);
             message = message.replace('{{name}}', context.slots.triage.person.first_name);
             dialog.sendMessage(context, message);
+
+            if (context.slots.triage.conclusion == 'noCovidEnd' && (context.user.locale == 'en_IN' || context.user.locale == 'hi_IN')) {
+              const mediaMessage = mediaUtil.createMediaMessage(`${config.staticMediaPath}/home_isolation_todo`, 'jpeg', context.user.locale);
+              dialog.sendMessage(context, mediaMessage);
+            }
           }),
           target: '#upsertTriageDetails'
-        },
-        {
-          target: '#triageSpo2'
         }
       ]
     },
@@ -377,6 +394,11 @@ const triageFlow = {
       states: {
         prompt: {
           onEntry: assign((context, event) => {
+            if (context.user.locale == 'en_IN' || context.user.locale == 'hi_IN') {
+              const mediaMessage = mediaUtil.createMediaMessage(`${config.staticMediaPath}/pulse_oximeter`, 'jpeg', context.user.locale);
+              dialog.sendMessage(context, mediaMessage);
+            }
+
             let message = dialog.get_message(messages.triageSpo2.prompt.preamble, context.user.locale);
             message = message.replace('{{name}}', context.slots.triage.person.first_name);
             let { prompt, grammer } = dialog.constructListPromptAndGrammer(messages.triageSpo2.prompt.options.list, messages.triageSpo2.prompt.options.messageBundle, context.user.locale);
@@ -390,7 +412,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -401,19 +423,12 @@ const triageFlow = {
               cond: (context) => context.intention == 'above95',
               actions: assign((context, event) => {
                 context.slots.triage.spo2 = context.intention;
-                dialog.sendMessage(context, dialog.get_message(messages.triageSpo2.normalSpo2, context.user.locale), false);
+                // dialog.sendMessage(context, dialog.get_message(messages.triageSpo2.normalSpo2, context.user.locale), false);
               }),
-              target: '#subscribe'
+              target: '#symptoms'
             },
             {
-              cond: (context) => context.intention == '90to94',
-              actions: assign((context, event) => {
-                context.slots.triage.spo2 = context.intention;
-              }),
-              target: '#triageSpo2Walk'
-            },
-            {
-              cond: (context) => context.intention == 'below90',
+              cond: (context) => context.intention == 'below94',
               actions: assign((context, event) => {
                 context.slots.triage.spo2 = context.intention;
                 context.slots.triage.conclusion = 'lowSpo2End'
@@ -463,7 +478,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {
@@ -509,6 +524,11 @@ const triageFlow = {
             message += prompt;
             context.grammer = grammer;
             dialog.sendMessage(context, message);
+
+            if (context.user.locale == 'en_IN' || context.user.locale == 'hi_IN') {
+              const mediaMessage = mediaUtil.createMediaMessage(`${config.staticMediaPath}/ways_to_use_chat_bot`, 'jpeg', context.user.locale);
+              dialog.sendMessage(context, mediaMessage);
+            }
           }),
           on: {
             USER_MESSAGE: 'process'
@@ -516,7 +536,7 @@ const triageFlow = {
         },
         process: {
           onEntry: assign((context, event) => {
-            context.intention = dialog.get_intention(context.grammer, event);
+            context.intention = dialog.get_intention(context.grammer, event, true);
           }),
           always: [
             {

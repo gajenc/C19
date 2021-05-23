@@ -1,7 +1,9 @@
 const { assign } = require('xstate');
 const dialog = require('./util/dialog.js');
+const mediaUtil = require('./util/media');
 const { personService, vitalsService, triageService } = require('./service/service-loader');
 const { messages, grammer } = require('./messages/self-care');
+const config = require('../../src/env-variables');
 
 const selfCareFlow = {
   recordVitals: {
@@ -13,10 +15,13 @@ const selfCareFlow = {
     states: {
       fetchPersons: {
         invoke: {
-          src: (context) => personService.getSubscribedPeople(context.user.mobileNumber),
+          src: (context) => personService.getPeople(context.user.mobileNumber),
           onDone: [
             {
               cond: (context, event) => event.data.length == 0,
+              actions: assign((context, event) => {
+                context.persons = event.data;
+              }),
               target: '#noUserFound'
             },
             {
@@ -67,7 +72,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
             }),
             always: [
               {
@@ -100,7 +105,9 @@ const selfCareFlow = {
           prompt: {
             onEntry: assign((context, event) => {
               context.grammer = grammer.vitalsSpo2;
-              dialog.sendMessage(context, dialog.get_message(messages.vitalsSpo2.prompt, context.user.locale));
+              let message = dialog.get_message(messages.vitalsSpo2.prompt, context.user.locale);
+              message = message.replace('{{name}}', context.slots.vitals.person.first_name);
+              dialog.sendMessage(context, message);
             }),
             on: {
               USER_MESSAGE: 'process'
@@ -108,7 +115,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
               context.slots.vitals.spo2 = context.intention
             }),
             always: [
@@ -117,22 +124,99 @@ const selfCareFlow = {
                 target: 'error'
               },
               {
-                cond: (context) => context.slots.vitals.spo2 == 'good',
-                target: '#vitalsTemperature'
-              },
-              {
-                cond: (context) => context.slots.vitals.spo2 == 'recheck',
-                target: '#vitalsSpo2Walk'
-              },
-              {
-                cond: (context) => context.slots.vitals.spo2 == 'bad',
+                cond: (context) => context.intention == 'bad',
                 actions: assign((context, event) => {
-                  let message = dialog.get_message(messages.vitalsSpo2WalkBad.prompt, context.user.locale);
+                  let message = dialog.get_message(messages.vitalsSpo2Bad, context.user.locale);
                   message = message.replace('{{name}}', context.slots.vitals.person.first_name);
                   dialog.sendMessage(context, message);
                 }),
-                target: '#unsubscribePerson'
+                target: '#addVitals'
               },
+              {
+                target: '#vitalsPulse'
+              },
+            ]
+          },
+          error: {
+            onEntry: assign((context, event) => {
+              dialog.sendMessage(context, dialog.get_message(dialog.global_messages.error.optionsRetry, context.user.locale), false);
+            }),
+            always: 'prompt'
+          }
+        }
+      },
+      vitalsPulse: {
+        id: 'vitalsPulse',
+        initial: 'prompt',
+        states: {
+          prompt: {
+            onEntry: assign((context, event) => {
+              context.grammer = grammer.vitalsPulse;
+              dialog.sendMessage(context, dialog.get_message(messages.vitalsPulse.prompt, context.user.locale));
+            }),
+            on: {
+              USER_MESSAGE: 'process'
+            }
+          },
+          process: {
+            onEntry: assign((context, event) => {
+              if (event.message.type == 'text') {
+                let pulse = parseInt(dialog.get_input(event, false));
+                context.slots.vitals.pulse = pulse;
+                context.validMessage = true;
+                return;
+              }
+              context.validMessage = false;
+            }),
+            always: [
+              {
+                cond: (context) => context.slots.vitals.pulse,
+                target: '#vitalsBreathing'
+              },
+              {
+                target: 'error'
+              }
+            ]
+          },
+          error: {
+            onEntry: assign((context, event) => {
+              dialog.sendMessage(context, dialog.get_message(dialog.global_messages.error.optionsRetry, context.user.locale), false);
+            }),
+            always: 'prompt'
+          }
+        }
+      },
+      vitalsBreathing: {
+        id: 'vitalsBreathing',
+        initial: 'prompt',
+        states: {
+          prompt: {
+            onEntry: assign((context, event) => {
+              context.grammer = grammer.vitalsBreathing;
+              dialog.sendMessage(context, dialog.get_message(messages.vitalsBreathing.prompt, context.user.locale));
+            }),
+            on: {
+              USER_MESSAGE: 'process'
+            }
+          },
+          process: {
+            onEntry: assign((context, event) => {
+              if (event.message.type == 'text') {
+                let breathing_rate = parseInt(dialog.get_input(event, false));
+                context.slots.vitals.breathing_rate = breathing_rate;
+                context.validMessage = true;
+                return;
+              }
+              context.validMessage = false;
+            }),
+            always: [
+              {
+                cond: (context) => context.slots.vitals.breathing_rate,
+                target: '#vitalsTemperature'
+              },
+              {
+                target: 'error'
+              }
             ]
           },
           error: {
@@ -160,7 +244,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
               context.slots.vitals.spo2 = context.intention
             }),
             always: [
@@ -206,7 +290,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
               context.slots.vitals.temperature = context.intention
             }),
             always: [
@@ -259,6 +343,8 @@ const selfCareFlow = {
       reportFetchPersons: {
         invoke: {
           src: (context) => personService.getSubscribedPeople(context.user.mobileNumber),
+          // TODO: Need to update this: do no include people who have not completed traige flow
+          // src: (context) => personService.getPeople(context.user.mobileNumber),
           onDone: [
             {
               cond: (context, event) => event.data.length == 0,
@@ -294,7 +380,7 @@ const selfCareFlow = {
         states: {
           prompt: {
             onEntry: assign((context, event) => {
-              let message = dialog.get_message(messages.selectPerson.prompt, context.user.locale);
+              let message = dialog.get_message(messages.reportSelectPerson.prompt, context.user.locale);
               let persons = context.persons;
               let grammer = [];
               for (let i = 0; i < persons.length; i++) {
@@ -312,7 +398,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
             }),
             always: [
               {
@@ -344,7 +430,15 @@ const selfCareFlow = {
           src: (context) => triageService.downloadReportForPerson(context.slots.report.person),
           onDone: {
             actions: assign((context, event) => {
-              dialog.sendMessage(context, '_Report_');
+              const media = event.data;
+              const split = media.split('/');
+              const fileName = split[split.length - 1];
+              const message =  {
+                "type": "media",
+                "output": media,
+                "caption": fileName
+              }
+              dialog.sendMessage(context, message);
             }),
             target: '#endstate'
           }
@@ -415,7 +509,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
             }),
             always: [
               {
@@ -456,7 +550,7 @@ const selfCareFlow = {
           },
           process: {
             onEntry: assign((context, event) => {
-              context.intention = dialog.get_intention(context.grammer, event);
+              context.intention = dialog.get_intention(context.grammer, event, true);
             }),
             always: [
               {
@@ -503,9 +597,7 @@ const selfCareFlow = {
         id: 'unsubscribePerson',
         invoke: {
           src: (context) => {
-            let person = {};
-            if (context.slots.exitProgram.person === undefined)
-              person = context.slots.vitals.person
+            let person = context.slots.exitProgram.person;
             return triageService.exitProgram(person, context.slots.exitProgram)
           },
           onDone: {
