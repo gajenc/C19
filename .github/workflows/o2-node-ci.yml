@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+            repository: Swasth-Digital-Health-Foundation/C19CareAssist
+            path: o2-provider
       - name: npm install and build webpack
         run: |
           npm install
@@ -31,6 +34,9 @@ jobs:
         node-version: [12.x, 14.x]
     steps: 
       - uses: actions/checkout@v2
+        with:
+            repository: Swasth-Digital-Health-Foundation/C19CareAssist
+            path: o2-provider      
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
