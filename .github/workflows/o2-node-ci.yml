@@ -14,7 +14,7 @@ defaults:
     working-directory: o2-provider
 
 jobs:
-  Job 1 - Run-npm-build:
+  _Run-npm-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,9 +27,9 @@ jobs:
           name: Step 2 - Publish npm artifacts
           path: public/
 
-  Job 2 - Run-npm-test:
+  _Run-npm-test:
     runs-on: ubuntu-latest
-    needs: Job 1 - Run-npm-build
+    needs: _Run-npm-build
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -51,9 +51,9 @@ jobs:
         env:
           CI: true
 
-  Job 3 - Build-and-push-image:
+  _Build-and-push-image:
     runs-on: ubuntu-latest
-    needs: Job 2 - Run-npm-test 
+    needs: _Run-npm-test 
     permissions: 
       contents: read
       packages: write 
