@@ -51,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
+          file: ./o2-provider/Dockerfile
           tags: swasthapp/o2-provider:main-${{ github.sha }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
