@@ -8,21 +8,21 @@ on:
     branches: [ main ]
     paths:
     - o2-provider/**  
+env:
+  SPARSE_CHECKOUT_DIR: ./o2-provider   
 jobs:
   run-npm-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-            repository: Swasth-Digital-Health-Foundation/C19CareAssist
-            path: o2-provider
-      - name: npm install and build webpack
+      - name: Step1 - npm install and build artifact
         run: |
           npm install
           npm run build
+        working-directory: $ {SPARSE_CHECKOUT_DIR}           
       - uses: actions/upload-artifact@main
         with:
-          name: webpack artifacts
+          name: Step 2 - Publish npm artifacts
           path: public/
 
   run-npm-test:
@@ -33,22 +33,20 @@ jobs:
         os: [ubuntu-latest]
         node-version: [12.x, 14.x]
     steps: 
-      - uses: actions/checkout@v2
-        with:
-            repository: Swasth-Digital-Health-Foundation/C19CareAssist
-            path: o2-provider      
+      - uses: actions/checkout@v2     
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/download-artifact@main
         with:
-          name: webpack artifacts
+          name: Step 2 - Publish npm artifacts
           path: public
-      - name: npm install, and test
+      - name: Step 3 - npm install, and test
         run: |
           npm install
           npm test
+        working-directory: $ {SPARSE_CHECKOUT_DIR}  
         env:
           CI: true
 
@@ -59,18 +57,19 @@ jobs:
       contents: read
       packages: write 
     steps:
-      - name: Checkout
+      - name: Step 1 -  Start to create Docker Image
         uses: actions/checkout@v2
-      - name: Log in to GitHub Docker Registry
+      - name: Step 2 - Log in to Docker Hub Registry
         uses: actions/docker/login@master
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      - name: Bake Docker Image
+      - name: Step 3 - Bake Docker Image
         uses: actions/docker/cli@master
         with:
-          args: build -t Swasth-Digital-Health-Foundation/C19CareAssist/o2-provider .
-      - name: Publish docker image to container registry
+          working-directory: $ {SPARSE_CHECKOUT_DIR}
+          args: build -t .
+      - name: Step 4 - Publish docker image to container registry
         uses: actions/docker/cli@master
         with:
           args: push swasthapp/o2-provider:${{ github.ref }}-${{ github.sha }}
