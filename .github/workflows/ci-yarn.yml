@@ -26,14 +26,14 @@ jobs:
       - name: Step1 - yarn install
         run: yarn install
 
-      - name: Step2 - Autogenerate GraphQL
-        run: yarn codegen
+#       - name: Step2 - Autogenerate GraphQL
+#         run: yarn codegen
 
-      - name: Step3 - Run Typescript Checks
-        run: yarn lint
+#       - name: Step3 - Run Typescript Checks
+#         run: yarn lint
 
-      - name: Step4 - Run Tests
-        run: yarn test:ci  
+#       - name: Step4 - Run Tests
+#         run: yarn test:ci  
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
