@@ -18,14 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Step1 - npm install and build artifact
+      - name: Step1 - yarn install
         run: |
-          npm install
-          npm run build         
-      - uses: actions/upload-artifact@main
-        with:
-          name: Step 2 - Publish npm artifacts
-          path: public/
+          yarn install    
 
   _Run-npm-test:
     runs-on: ubuntu-latest
