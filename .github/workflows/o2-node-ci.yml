@@ -1,11 +1,11 @@
 name: NPM - Create and publish a package
 on:
   push:
-    branches: [ main ]
+    branches: [ test ]
     paths:
     - o2-provider/**
   pull_request:
-    branches: [ main ]
+    branches: [ test ]
     paths:
     - o2-provider/**  
 
