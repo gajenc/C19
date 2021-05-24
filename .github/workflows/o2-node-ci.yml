@@ -8,26 +8,28 @@ on:
     branches: [ main ]
     paths:
     - o2-provider/**  
-env:
-  SPARSE_CHECKOUT_DIR: ./o2-provider   
+
+defaults:
+  run:
+    working-directory: o2-provider
+
 jobs:
-  run-npm-build:
+  Job 1 - Run-npm-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Step1 - npm install and build artifact
         run: |
           npm install
-          npm run build
-        working-directory: $ {SPARSE_CHECKOUT_DIR}           
+          npm run build         
       - uses: actions/upload-artifact@main
         with:
           name: Step 2 - Publish npm artifacts
           path: public/
 
-  run-npm-test:
+  Job 2 - Run-npm-test:
     runs-on: ubuntu-latest
-    needs: run-npm-build
+    needs: Job 1 - Run-npm-build
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -46,13 +48,12 @@ jobs:
         run: |
           npm install
           npm test
-        working-directory: $ {SPARSE_CHECKOUT_DIR}  
         env:
           CI: true
 
-  build-and-push-image:
+  Job 3 - Build-and-push-image:
     runs-on: ubuntu-latest
-    needs: run-npm-test 
+    needs: Job 2 - Run-npm-test 
     permissions: 
       contents: read
       packages: write 
@@ -67,7 +68,6 @@ jobs:
       - name: Step 3 - Bake Docker Image
         uses: actions/docker/cli@master
         with:
-          working-directory: $ {SPARSE_CHECKOUT_DIR}
           args: build -t .
       - name: Step 4 - Publish docker image to container registry
         uses: actions/docker/cli@master
